@@ -19,8 +19,18 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const isAdmin = user?.email === 'admin@klikjasa.com' || role === 'admin';
   
   useEffect(() => {
-    // Only show toast when authentication is complete and we can determine access
-    if (!loading && isAuthenticated && !isAdmin) {
+    if (loading) return; // Don't do anything while loading
+    
+    console.log("AdminRoute check:", { 
+      isAuthenticated, 
+      isAdmin, 
+      email: user?.email, 
+      role, 
+      loading 
+    });
+    
+    // If authenticated but not admin, show access denied and redirect
+    if (isAuthenticated && !isAdmin) {
       console.log("Access denied: Not admin", { email: user?.email, role });
       
       toast({
@@ -33,7 +43,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     }
     
     // If not authenticated at all, redirect to admin login
-    if (!loading && !isAuthenticated) {
+    if (!isAuthenticated) {
       console.log("Not authenticated, redirecting to admin login");
       navigate('/admin/login', { replace: true, state: { from: location } });
     }

@@ -52,7 +52,7 @@ export const useAuthProvider = () => {
     await register(email, password, name);
   };
 
-  // Enhanced login function with better admin handling
+  // Enhanced login function with improved admin handling
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting login with email:", email);
@@ -66,18 +66,31 @@ export const useAuthProvider = () => {
         // Set role in the local state immediately
         setRole('admin');
         
+        // Update profile in memory immediately
+        setProfile(prev => ({
+          ...prev,
+          role: 'admin'
+        }));
+        
         // Update role in database immediately to ensure consistent state
         try {
           await updateUserRole(data.user.id, 'admin');
           console.log("Admin role updated in database");
-          
-          // Update profile in memory
-          setProfile(prev => ({
-            ...prev,
-            role: 'admin'
-          }));
         } catch (err) {
           console.error("Error updating admin role:", err);
+        }
+      } else if (data.user) {
+        // For non-admin users, fetch the profile to get the role
+        try {
+          const profileData = await fetchProfile(data.user.id);
+          if (profileData) {
+            setProfile(profileData);
+            setRole(profileData.role || 'user');
+          }
+        } catch (err) {
+          console.error("Error fetching profile after login:", err);
+          // Default to user role if profile fetch fails
+          setRole('user');
         }
       }
       

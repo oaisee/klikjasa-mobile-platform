@@ -41,14 +41,6 @@ export const useAuthState = () => {
               if (newSession.user.email === 'admin@klikjasa.com') {
                 console.log("Setting role to admin for admin@klikjasa.com");
                 setRole('admin');
-                
-                // We don't want to wait for profile fetch to set the role
-                // So we update the database immediately
-                try {
-                  await updateAdminRoleIfNeeded(newSession.user.id);
-                } catch (err) {
-                  console.error("Error updating admin role:", err);
-                }
               }
               
               // Defer profile fetching to avoid potential deadlock
@@ -61,6 +53,13 @@ export const useAuthState = () => {
                   if (newSession.user.email === 'admin@klikjasa.com') {
                     // Ensure admin user always has admin role
                     setRole('admin');
+                    
+                    // Update database role for admin if needed
+                    try {
+                      await updateAdminRoleIfNeeded(newSession.user.id);
+                    } catch (err) {
+                      console.error("Error updating admin role:", err);
+                    }
                   } else if (profileData && profileData.role) {
                     console.log("Setting role from profile:", profileData.role);
                     setRole(profileData.role as UserRole);
@@ -93,13 +92,6 @@ export const useAuthState = () => {
           if (existingSession.user.email === 'admin@klikjasa.com') {
             console.log("Setting initial role to admin for admin@klikjasa.com");
             setRole('admin');
-            
-            // Update database role for admin
-            try {
-              await updateAdminRoleIfNeeded(existingSession.user.id);
-            } catch (err) {
-              console.error("Error updating admin role:", err);
-            }
           }
           
           try {
@@ -110,6 +102,13 @@ export const useAuthState = () => {
             if (existingSession.user.email === 'admin@klikjasa.com') {
               // Ensure admin user always has admin role
               setRole('admin');
+              
+              // Update database role for admin if needed
+              try {
+                await updateAdminRoleIfNeeded(existingSession.user.id);
+              } catch (err) {
+                console.error("Error updating admin role:", err);
+              }
             } else if (profileData && profileData.role) {
               console.log("Setting initial role from profile:", profileData.role);
               setRole(profileData.role as UserRole);

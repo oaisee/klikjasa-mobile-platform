@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { login, register } = useAuth();
+  const { login, register, role, user } = useAuth();
   const navigate = useNavigate();
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -30,18 +30,42 @@ const AuthForm = () => {
     confirmPassword: ''
   });
 
+  // Check if user is already logged in as admin and redirect accordingly
+  useEffect(() => {
+    if (user?.email === 'admin@klikjasa.com' || role === 'admin') {
+      console.log('Admin user detected, redirecting to admin panel');
+      setTimeout(() => {
+        navigate('/admin');
+      }, 500);
+    } else if (user) {
+      // If regular user, redirect to home
+      navigate('/');
+    }
+  }, [user, role, navigate]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setAuthError(null);
 
     try {
-      await login(loginForm.email, loginForm.password);
+      const result = await login(loginForm.email, loginForm.password);
+      
       toast({
         title: 'Success',
         description: 'You have successfully logged in!'
       });
-      navigate('/');
+      
+      // Special handling for admin login
+      if (loginForm.email === 'admin@klikjasa.com') {
+        console.log('Admin login successful, redirecting to admin panel');
+        // Add delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1000);
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.');
       toast({
