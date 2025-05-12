@@ -35,7 +35,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       const success = await logout();
       
       if (success) {
-        navigate('/admin/login', { replace: true });
+        navigate('/auth', { replace: true });
         toast({
           title: 'Logout successful',
           description: 'You have been logged out of the admin panel',
@@ -46,7 +46,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           description: 'Session may already be expired. Redirecting to login.',
           variant: 'destructive',
         });
-        navigate('/admin/login', { replace: true });
+        navigate('/auth', { replace: true });
       }
     } catch (error) {
       console.error("Admin logout error:", error);
@@ -55,7 +55,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
         description: 'Failed to log out properly. Redirecting to login.',
         variant: 'destructive',
       });
-      navigate('/admin/login', { replace: true });
+      navigate('/auth', { replace: true });
     }
   };
 
