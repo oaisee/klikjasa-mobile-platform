@@ -5,8 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { uploadIdCard } from '@/components/provider-verification/utils/uploadUtils';
 import { submitVerificationRequest } from '@/components/provider-verification/utils/verificationApi';
@@ -60,9 +59,9 @@ export function VerificationForm() {
     try {
       if (!formData.idCard) {
         toast({
-          title: 'Error',
-          description: 'Please upload your ID card',
-          variant: 'destructive'
+          title: "Error",
+          description: "Please upload your ID card",
+          variant: "destructive"
         });
         setIsLoading(false);
         return;
@@ -70,24 +69,24 @@ export function VerificationForm() {
 
       if (!user) {
         toast({
-          title: 'Error',
-          description: 'Authentication error',
-          variant: 'destructive'
+          title: "Error",
+          description: "Authentication error",
+          variant: "destructive"
         });
         setIsLoading(false);
         return;
       }
 
-      // 1. Upload ID card
+      // 1. Upload ID card first
       const uploadResult = await uploadIdCard(user.id, formData.idCard, (progress) => {
         setUploadProgress(progress);
       });
       
       if (!uploadResult.success) {
-        throw new Error(uploadResult.error || 'Failed to upload ID card');
+        throw new Error(uploadResult.error || "Failed to upload ID card");
       }
       
-      // 2. Submit verification request
+      // 2. Submit verification request with the uploaded ID card URL
       const submitResult = await submitVerificationRequest({
         userId: user.id,
         fullName: formData.fullName,
@@ -99,26 +98,26 @@ export function VerificationForm() {
           village: formData.village,
           full_address: formData.address
         },
-        idCardUrl: uploadResult.publicUrl
+        idCardUrl: uploadResult.publicUrl || ""
       });
 
       if (!submitResult.success) {
-        throw new Error(submitResult.error || 'Failed to submit verification request');
+        throw new Error(submitResult.error || "Failed to submit verification request");
       }
 
       toast({
-        title: 'Success',
-        description: 'Verification request submitted successfully. Please wait for admin approval.'
+        title: "Success",
+        description: "Your verification request has been submitted successfully. Please wait for admin approval."
       });
       
-      navigate('/profile');
+      navigate("/profile");
       
     } catch (error) {
-      console.error('Verification error:', error);
+      console.error("Verification error:", error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to submit verification request',
-        variant: 'destructive'
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong during the verification process. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -167,9 +166,9 @@ export function VerificationForm() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : 'Submitting...'}
+              {uploadProgress > 0 ? `Uploading... ${Math.round(uploadProgress)}%` : "Processing..."}
             </>
-          ) : 'Submit Verification'}
+          ) : "Submit Verification"}
         </Button>
       </div>
     </form>
