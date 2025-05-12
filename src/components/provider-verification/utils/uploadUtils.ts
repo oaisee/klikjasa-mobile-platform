@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UploadResult {
   success: boolean;
@@ -13,20 +14,18 @@ export const uploadIdCard = async (
   onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
   try {
-    // Skip bucket creation as it requires admin privileges
-    // Instead, directly try to upload to the bucket
-    // The bucket should be created via SQL migrations by the project admin
+    // Now the bucket exists, so we don't need to create it
+    // Report initial progress
+    if (onProgress) {
+      onProgress(10);
+    }
     
+    // Create a unique file name
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random().toString().substring(2)}.${fileExt}`;
     const filePath = `id_cards/${fileName}`;
-
-    // If progress callback is provided, set up progress monitoring
-    if (onProgress) {
-      onProgress(10); // Initial progress indication
-    }
     
-    // Standard upload
+    // Upload file to the existing 'verifications' bucket
     const { error: uploadError, data } = await supabase.storage
       .from('verifications')
       .upload(filePath, file, {
@@ -43,7 +42,7 @@ export const uploadIdCard = async (
     }
     
     if (onProgress) {
-      onProgress(90); // Almost complete
+      onProgress(90);
     }
     
     // Get public URL
@@ -53,7 +52,7 @@ export const uploadIdCard = async (
       .getPublicUrl(filePath);
     
     if (onProgress) {
-      onProgress(100); // Complete
+      onProgress(100);
     }
     
     return {

@@ -55,6 +55,7 @@ export function VerificationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setUploadProgress(0);
     
     try {
       if (!formData.idCard) {
@@ -69,8 +70,8 @@ export function VerificationForm() {
 
       if (!user) {
         toast({
-          title: "Error",
-          description: "Authentication error",
+          title: "Authentication Error",
+          description: "You need to be logged in to submit a verification request",
           variant: "destructive"
         });
         setIsLoading(false);
@@ -78,12 +79,17 @@ export function VerificationForm() {
       }
 
       // 1. Upload ID card first
+      toast({
+        title: "Uploading",
+        description: "Uploading your ID card..."
+      });
+      
       const uploadResult = await uploadIdCard(user.id, formData.idCard, (progress) => {
         setUploadProgress(progress);
       });
       
       if (!uploadResult.success) {
-        throw new Error(uploadResult.error || "Failed to upload ID card");
+        throw new Error(uploadResult.error || "Failed to upload ID card. Please make sure the image is valid and try again.");
       }
       
       // 2. Submit verification request with the uploaded ID card URL
@@ -121,6 +127,7 @@ export function VerificationForm() {
       });
     } finally {
       setIsLoading(false);
+      setUploadProgress(0);
     }
   };
 
