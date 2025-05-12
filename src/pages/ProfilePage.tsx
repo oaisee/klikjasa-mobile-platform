@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/auth';
+import { useVerificationStatus } from '@/hooks/useVerificationStatus';
 
 // Import the refactored components
 import UserInfoSection from '@/components/profile/UserInfoSection';
@@ -18,8 +18,11 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [pendingVerification, setPendingVerification] = useState(false);
-  const [verificationLoading, setVerificationLoading] = useState(true);
+  
+  // Use the new verification status hook
+  const { pendingVerification, verificationLoading } = useVerificationStatus({
+    userId: user?.id
+  });
 
   // Redirect to auth page if not authenticated
   React.useEffect(() => {
@@ -28,36 +31,7 @@ const ProfilePage = () => {
     }
   }, [isAuthenticated, loading, navigate]);
 
-  // Check if the user has a pending verification request
-  useEffect(() => {
-    const checkPendingVerification = async () => {
-      if (!user) return;
-      
-      try {
-        setVerificationLoading(true);
-        const { data, error } = await supabase
-          .from('provider_verifications')
-          .select('status')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .maybeSingle();
-          
-        if (error) {
-          console.error('Error checking verification status:', error);
-        } else {
-          setPendingVerification(!!data);
-        }
-      } catch (error) {
-        console.error('Error checking verification status:', error);
-      } finally {
-        setVerificationLoading(false);
-      }
-    };
-    
-    checkPendingVerification();
-  }, [user]);
-
-  if (loading) {
+  if (loading || verificationLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 text-klikjasa-purple animate-spin" />
