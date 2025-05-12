@@ -30,7 +30,7 @@ const AuthForm = () => {
     confirmPassword: ''
   });
 
-  // Check if user is already logged in as admin and redirect accordingly
+  // Check if user is already logged in and redirect accordingly
   useEffect(() => {
     if (user?.email === 'admin@klikjasa.com' || role === 'admin') {
       console.log('Admin user detected, redirecting to admin panel');
@@ -39,6 +39,7 @@ const AuthForm = () => {
       }, 500);
     } else if (user) {
       // If regular user, redirect to home
+      console.log('Regular user detected, redirecting to home page');
       navigate('/');
     }
   }, [user, role, navigate]);
@@ -49,6 +50,7 @@ const AuthForm = () => {
     setAuthError(null);
 
     try {
+      console.log(`Submitting login form for: ${loginForm.email}`);
       const result = await login(loginForm.email, loginForm.password);
       
       toast({
@@ -64,13 +66,16 @@ const AuthForm = () => {
           navigate('/admin');
         }, 1000);
       } else {
+        console.log('Regular user login successful, redirecting to home page');
         navigate('/');
       }
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.';
+      console.error('Login error in form:', errorMessage);
+      setAuthError(errorMessage);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to login',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -95,17 +100,20 @@ const AuthForm = () => {
     }
 
     try {
+      console.log(`Submitting registration form for: ${registerForm.email}`);
       await register(registerForm.email, registerForm.password, registerForm.name);
       toast({
         title: 'Success',
         description: 'Account created successfully!'
       });
+      console.log('Registration successful, redirecting to home page');
       navigate('/');
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
         : 'Failed to register. Please try again later.';
       
+      console.error('Registration error in form:', errorMessage);
       setAuthError(errorMessage);
       toast({
         title: 'Error',

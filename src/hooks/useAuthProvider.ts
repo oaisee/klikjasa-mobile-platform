@@ -52,7 +52,7 @@ export const useAuthProvider = () => {
     await register(email, password, name);
   };
 
-  // Enhanced login function with improved admin handling
+  // Enhanced login function with improved handling for both admin and regular users
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting login with email:", email);
@@ -63,7 +63,7 @@ export const useAuthProvider = () => {
       if (email === 'admin@klikjasa.com' && data.user) {
         console.log("Admin login detected, setting role to admin immediately");
         
-        // Set role in the local state immediately - FIX: Use the UserRole type explicitly 
+        // Set role in the local state immediately
         setRole('admin' as UserRole);
         
         // Update profile in memory immediately
@@ -82,11 +82,19 @@ export const useAuthProvider = () => {
       } else if (data.user) {
         // For non-admin users, fetch the profile to get the role
         try {
+          console.log("Regular user login, fetching profile");
           const profileData = await fetchProfile(data.user.id);
+          console.log("Profile data fetched:", profileData);
+          
           if (profileData) {
             setProfile(profileData);
-            // Fix: Cast the role string to UserRole type
+            // Cast the role string to UserRole type
             setRole((profileData.role || 'user') as UserRole);
+            console.log("User role set to:", profileData.role || 'user');
+          } else {
+            // If no profile is found, set default user role
+            console.log("No profile found, setting default user role");
+            setRole('user' as UserRole);
           }
         } catch (err) {
           console.error("Error fetching profile after login:", err);

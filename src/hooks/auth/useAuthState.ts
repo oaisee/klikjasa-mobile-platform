@@ -48,24 +48,37 @@ export const useAuthState = () => {
                 try {
                   const profileData = await fetchProfile(newSession.user.id);
                   console.log("Fetched profile data:", profileData);
-                  setProfile(profileData);
                   
-                  if (newSession.user.email === 'admin@klikjasa.com') {
-                    // Ensure admin user always has admin role
-                    setRole('admin' as UserRole);
+                  if (profileData) {
+                    setProfile(profileData);
                     
-                    // Update database role for admin if needed
-                    try {
-                      await updateAdminRoleIfNeeded(newSession.user.id);
-                    } catch (err) {
-                      console.error("Error updating admin role:", err);
+                    if (newSession.user.email === 'admin@klikjasa.com') {
+                      // Ensure admin user always has admin role
+                      setRole('admin' as UserRole);
+                      
+                      // Update database role for admin if needed
+                      try {
+                        await updateAdminRoleIfNeeded(newSession.user.id);
+                      } catch (err) {
+                        console.error("Error updating admin role:", err);
+                      }
+                    } else if (profileData && profileData.role) {
+                      console.log("Setting role from profile:", profileData.role);
+                      setRole(profileData.role as UserRole);
+                    } else {
+                      // Ensure default role is set if profile has no role
+                      console.log("No role in profile, setting default user role");
+                      setRole('user' as UserRole);
                     }
-                  } else if (profileData && profileData.role) {
-                    console.log("Setting role from profile:", profileData.role);
-                    setRole(profileData.role as UserRole);
+                  } else {
+                    // If no profile exists yet, set default role
+                    console.log("No profile found, setting default user role");
+                    setRole('user' as UserRole);
                   }
                 } catch (err) {
                   console.error("Error fetching profile:", err);
+                  // Default to user role on error
+                  setRole('user' as UserRole);
                 }
               }, 0);
             } else {
@@ -97,24 +110,37 @@ export const useAuthState = () => {
           try {
             const profileData = await fetchProfile(existingSession.user.id);
             console.log("Initial profile data:", profileData);
-            setProfile(profileData);
             
-            if (existingSession.user.email === 'admin@klikjasa.com') {
-              // Ensure admin user always has admin role
-              setRole('admin' as UserRole);
+            if (profileData) {
+              setProfile(profileData);
               
-              // Update database role for admin if needed
-              try {
-                await updateAdminRoleIfNeeded(existingSession.user.id);
-              } catch (err) {
-                console.error("Error updating admin role:", err);
+              if (existingSession.user.email === 'admin@klikjasa.com') {
+                // Ensure admin user always has admin role
+                setRole('admin' as UserRole);
+                
+                // Update database role for admin if needed
+                try {
+                  await updateAdminRoleIfNeeded(existingSession.user.id);
+                } catch (err) {
+                  console.error("Error updating admin role:", err);
+                }
+              } else if (profileData && profileData.role) {
+                console.log("Setting initial role from profile:", profileData.role);
+                setRole(profileData.role as UserRole);
+              } else {
+                // Ensure default role is set if profile has no role
+                console.log("No role in profile, setting default user role");
+                setRole('user' as UserRole);
               }
-            } else if (profileData && profileData.role) {
-              console.log("Setting initial role from profile:", profileData.role);
-              setRole(profileData.role as UserRole);
+            } else {
+              // If no profile exists yet, set default role
+              console.log("No profile found, setting default user role");
+              setRole('user' as UserRole);
             }
           } catch (err) {
             console.error("Error fetching initial profile:", err);
+            // Default to user role on error
+            setRole('user' as UserRole);
           }
         }
 

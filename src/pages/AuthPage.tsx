@@ -18,6 +18,7 @@ const AuthPage = () => {
         navigate('/admin');
       } else {
         // Otherwise redirect to home
+        console.log("Redirecting regular user to home page");
         navigate('/');
       }
     }

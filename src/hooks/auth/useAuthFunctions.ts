@@ -31,6 +31,7 @@ export const login = async (email: string, password: string) => {
 // Register function - modified to rely on database trigger for profile creation
 export const register = async (email: string, password: string, name: string) => {
   try {
+    console.log(`Attempting to register: ${email} with name: ${name}`);
     // Step 1: Sign up the user with metadata for the database trigger
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -43,13 +44,16 @@ export const register = async (email: string, password: string, name: string) =>
     });
 
     if (error) {
+      console.error('Registration error:', error);
       throw new Error(error.message);
     }
 
     if (!data.user) {
+      console.error('User creation failed');
       throw new Error('User creation failed');
     }
     
+    console.log('Registration successful for:', email);
     return data;
   } catch (error) {
     console.error('Registration error:', error);
