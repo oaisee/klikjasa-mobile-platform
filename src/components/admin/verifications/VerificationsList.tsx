@@ -79,7 +79,7 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
                           variant="outline" 
                           size="sm" 
                           className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
-                          onClick={() => onQuickApprove(verification.id, verification.full_name)}
+                          onClick={() => onQuickApprove(verification.id, verification.full_name || 'Unknown')}
                         >
                           <Check size={16} className="mr-1" /> Approve
                         </Button>
@@ -87,7 +87,7 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
                           variant="outline" 
                           size="sm" 
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
-                          onClick={() => onQuickReject(verification.id, verification.full_name)}
+                          onClick={() => onQuickReject(verification.id, verification.full_name || 'Unknown')}
                         >
                           <X size={16} className="mr-1" /> Reject
                         </Button>
