@@ -7,12 +7,54 @@ interface UploadResult {
   error?: string;
 }
 
+// Function to create the verifications bucket if it doesn't exist
+const ensureVerificationsBucketExists = async (): Promise<boolean> => {
+  try {
+    // First check if bucket exists
+    const { data: buckets, error: listError } = await supabase
+      .storage
+      .listBuckets();
+    
+    const verificationsBucketExists = buckets?.some(bucket => bucket.name === 'verifications');
+    
+    if (!verificationsBucketExists) {
+      // Create the bucket if it doesn't exist
+      const { error: createError } = await supabase
+        .storage
+        .createBucket('verifications', { 
+          public: true // Make the bucket public so we can access the images
+        });
+        
+      if (createError) {
+        console.error('Error creating verifications bucket:', createError);
+        return false;
+      }
+      
+      console.log('Created verifications bucket successfully');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error ensuring verifications bucket exists:', error);
+    return false;
+  }
+};
+
 export const uploadIdCard = async (
   userId: string, 
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
   try {
+    // Ensure the bucket exists before uploading
+    const bucketExists = await ensureVerificationsBucketExists();
+    if (!bucketExists) {
+      return {
+        success: false,
+        error: 'Failed to ensure verifications bucket exists'
+      };
+    }
+    
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random()}.${fileExt}`;
     const filePath = `id_cards/${fileName}`;
