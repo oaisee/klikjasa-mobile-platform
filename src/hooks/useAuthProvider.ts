@@ -63,8 +63,8 @@ export const useAuthProvider = () => {
       if (email === 'admin@klikjasa.com' && data.user) {
         console.log("Admin login detected, setting role to admin immediately");
         
-        // Set role in the local state immediately
-        setRole('admin');
+        // Set role in the local state immediately - FIX: Use the UserRole type explicitly 
+        setRole('admin' as UserRole);
         
         // Update profile in memory immediately
         setProfile(prev => ({
@@ -85,12 +85,12 @@ export const useAuthProvider = () => {
           const profileData = await fetchProfile(data.user.id);
           if (profileData) {
             setProfile(profileData);
-            setRole(profileData.role || 'user');
+            setRole(profileData.role || 'user' as UserRole);
           }
         } catch (err) {
           console.error("Error fetching profile after login:", err);
           // Default to user role if profile fetch fails
-          setRole('user');
+          setRole('user' as UserRole);
         }
       }
       
@@ -112,7 +112,7 @@ export const useAuthProvider = () => {
       
       if (success) {
         // Clear local state regardless of logout result
-        setRole('user');
+        setRole('user' as UserRole);
         setProfile(null);
       }
       
@@ -120,7 +120,7 @@ export const useAuthProvider = () => {
     } catch (error) {
       console.error("Logout error in provider:", error);
       // Clear local state on error anyway
-      setRole('user');
+      setRole('user' as UserRole);
       setProfile(null);
       return false;
     }

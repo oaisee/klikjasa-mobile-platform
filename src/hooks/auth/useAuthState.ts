@@ -40,7 +40,7 @@ export const useAuthState = () => {
               // Special handling for admin user - IMMEDIATELY set role to admin
               if (newSession.user.email === 'admin@klikjasa.com') {
                 console.log("Setting role to admin for admin@klikjasa.com");
-                setRole('admin');
+                setRole('admin' as UserRole);
               }
               
               // Defer profile fetching to avoid potential deadlock
@@ -52,7 +52,7 @@ export const useAuthState = () => {
                   
                   if (newSession.user.email === 'admin@klikjasa.com') {
                     // Ensure admin user always has admin role
-                    setRole('admin');
+                    setRole('admin' as UserRole);
                     
                     // Update database role for admin if needed
                     try {
@@ -91,7 +91,7 @@ export const useAuthState = () => {
           // Special handling for admin user - IMMEDIATELY set role to admin
           if (existingSession.user.email === 'admin@klikjasa.com') {
             console.log("Setting initial role to admin for admin@klikjasa.com");
-            setRole('admin');
+            setRole('admin' as UserRole);
           }
           
           try {
@@ -101,7 +101,7 @@ export const useAuthState = () => {
             
             if (existingSession.user.email === 'admin@klikjasa.com') {
               // Ensure admin user always has admin role
-              setRole('admin');
+              setRole('admin' as UserRole);
               
               // Update database role for admin if needed
               try {
