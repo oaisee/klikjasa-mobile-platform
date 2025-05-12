@@ -85,7 +85,8 @@ export const useAuthProvider = () => {
           const profileData = await fetchProfile(data.user.id);
           if (profileData) {
             setProfile(profileData);
-            setRole(profileData.role || 'user' as UserRole);
+            // Fix: Cast the role string to UserRole type
+            setRole((profileData.role || 'user') as UserRole);
           }
         } catch (err) {
           console.error("Error fetching profile after login:", err);
