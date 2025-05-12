@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProviderVerification } from './types/verification';
@@ -16,6 +16,7 @@ export function useFetchVerificationDetail() {
     try {
       setLoading(true);
       setError(null);
+      setVerification(null); // Clear existing verification data when fetching new one
       
       console.log("Fetching verification details with ID:", id);
       
@@ -33,12 +34,14 @@ export function useFetchVerificationDetail() {
         
       if (fetchError) {
         console.error("Error fetching verification details:", fetchError);
-        throw fetchError;
+        setError(fetchError.message);
+        setLoading(false);
+        return null;
       }
       
       if (!data) {
         console.log("No verification data found for ID:", id);
-        setVerification(null);
+        setError("Verification not found");
         setLoading(false);
         return null;
       }
@@ -52,6 +55,7 @@ export function useFetchVerificationDetail() {
       } as ProviderVerification;
       
       setVerification(transformedData);
+      setLoading(false);
       return transformedData;
     } catch (err) {
       console.error("Error fetching verification details:", err);
@@ -62,9 +66,8 @@ export function useFetchVerificationDetail() {
         description: "Failed to load verification details. Please try again.",
         variant: "destructive"
       });
-      return null;
-    } finally {
       setLoading(false);
+      return null;
     }
   };
 

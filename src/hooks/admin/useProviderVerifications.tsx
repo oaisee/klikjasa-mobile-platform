@@ -36,7 +36,7 @@ export function useProviderVerifications(props: UseProviderVerificationsProps = 
   } = useVerificationActions();
 
   // Combine loading and error states
-  const loading = fetchLoading || (actionLoading !== null);
+  const loading = fetchLoading || detailLoading || (actionLoading !== null);
   const error = fetchError || detailError;
 
   return {

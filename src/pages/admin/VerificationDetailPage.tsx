@@ -5,7 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useProviderVerifications } from '@/hooks/admin/useProviderVerifications';
+import { useFetchVerificationDetail } from '@/hooks/admin/useFetchVerificationDetail';
+import { useVerificationActions } from '@/hooks/admin/useVerificationActions';
 
 // Import our components
 import VerificationHeader from '@/components/admin/verifications/VerificationHeader';
@@ -19,22 +20,18 @@ import DetailPageErrorState from '@/components/admin/verifications/DetailPageErr
 const VerificationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { fetchVerificationById, verification, loading, updateVerificationStatus } = useProviderVerifications();
+  const { verification, loading, error: fetchError, fetchVerificationById } = useFetchVerificationDetail();
+  const { updateVerificationStatus } = useVerificationActions();
   
   // Load verification data
   useEffect(() => {
     const loadVerification = async () => {
-      setDataLoading(true);
-      setError(null);
-      
-      // If there's no ID, navigate back
+      // If there's no ID, show error
       if (!id) {
         console.log("No ID parameter provided");
         setError("Missing verification ID");
-        setDataLoading(false);
         return;
       }
       
@@ -43,28 +40,18 @@ const VerificationDetailPage: React.FC = () => {
       if (!uuidRegex.test(id)) {
         console.log("ID is not a valid UUID format:", id);
         setError(`Invalid verification ID format: ${id}`);
-        setDataLoading(false);
         return;
       }
       
-      try {
-        console.log("Fetching verification with ID:", id);
-        const data = await fetchVerificationById(id);
-        
-        if (!data) {
-          console.log("No verification data returned for ID:", id);
-          setError("Verification request not found");
-        }
-      } catch (err) {
-        console.error("Error loading verification:", err);
-        setError("Failed to load verification details");
-      } finally {
-        setDataLoading(false);
-      }
+      console.log("Fetching verification with ID:", id);
+      await fetchVerificationById(id);
     };
     
     loadVerification();
   }, [id, fetchVerificationById]);
+
+  // Combine errors from state and fetch operation
+  const displayError = error || fetchError;
 
   return (
     <AdminLayout title="Verification Details">
@@ -74,10 +61,10 @@ const VerificationDetailPage: React.FC = () => {
         </Button>
       </div>
       
-      {(dataLoading || loading) ? (
+      {loading ? (
         <DetailPageLoadingState />
-      ) : error || !verification ? (
-        <DetailPageErrorState error={error} />
+      ) : displayError || !verification ? (
+        <DetailPageErrorState error={displayError} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
