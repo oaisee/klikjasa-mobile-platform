@@ -16,6 +16,13 @@ import TopUpPage from "./pages/TopUpPage";
 import ProviderVerificationPage from "./pages/ProviderVerificationPage";
 import NotFound from "./pages/NotFound";
 
+// Admin components
+import AdminRoute from "./components/auth/AdminRoute";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import VerificationsPage from "./pages/admin/VerificationsPage";
+import VerificationDetailPage from "./pages/admin/VerificationDetailPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -25,19 +32,45 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/service/:id" element={<ServiceDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/topup" element={<TopUpPage />} />
-              <Route path="/provider-verification" element={<ProviderVerificationPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <Routes>
+            {/* Admin Routes - No layout wrapper */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboardPage />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/verifications" 
+              element={
+                <AdminRoute>
+                  <VerificationsPage />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/verifications/:id" 
+              element={
+                <AdminRoute>
+                  <VerificationDetailPage />
+                </AdminRoute>
+              } 
+            />
+            
+            {/* Main App Routes */}
+            <Route path="/" element={<Layout><HomePage /></Layout>} />
+            <Route path="/search" element={<Layout><SearchPage /></Layout>} />
+            <Route path="/service/:id" element={<Layout><ServiceDetailPage /></Layout>} />
+            <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+            <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
+            <Route path="/topup" element={<Layout><TopUpPage /></Layout>} />
+            <Route path="/provider-verification" element={<Layout><ProviderVerificationPage /></Layout>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<Layout><NotFound /></Layout>} />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
