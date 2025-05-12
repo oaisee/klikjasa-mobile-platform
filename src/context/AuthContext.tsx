@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { UserRole } from '@/types';
@@ -52,6 +53,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;
+    }
+  };
+  
+  // Update user's role in the database
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating role:', error);
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      throw error;
     }
   };
 
