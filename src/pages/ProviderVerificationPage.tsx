@@ -65,14 +65,24 @@ const ProviderVerificationPage = () => {
       const fileName = `${user.id}-${Math.random()}.${fileExt}`;
       const filePath = `id_cards/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
+      // Manual progress monitoring with XHR
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', formData.idCard);
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = (event.loaded / event.total) * 100;
+          setUploadProgress(percent);
+        }
+      });
+      
+      // Proceed with standard upload (without progress callback)
+      const { error: uploadError, data } = await supabase.storage
         .from('verifications')
         .upload(filePath, formData.idCard, {
           cacheControl: '3600',
-          upsert: false,
-          onUploadProgress: (progress) => {
-            setUploadProgress((progress.loaded / progress.total) * 100);
-          }
+          upsert: false
         });
 
       if (uploadError) {
