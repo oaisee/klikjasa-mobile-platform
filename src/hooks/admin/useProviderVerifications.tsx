@@ -34,7 +34,7 @@ interface UseProviderVerificationsProps {
   searchTerm?: string;
 }
 
-export function useProviderVerifications({ status, searchTerm }: UseProviderVerificationsProps = {}) {
+export function useProviderVerifications({ status = 'all', searchTerm = '' }: UseProviderVerificationsProps = {}) {
   const [verifications, setVerifications] = useState<ProviderVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,8 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
     try {
       setLoading(true);
       setError(null);
+      
+      console.log("Fetching verifications with status:", status, "search term:", searchTerm);
       
       let query = supabase
         .from('provider_verifications')
@@ -57,14 +59,19 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         `)
         .order('created_at', { ascending: false });
 
-      // Filter by status if provided
+      // Filter by status if provided and not 'all'
       if (status && status !== 'all') {
         query = query.eq('status', status);
       }
       
-      const { data, error } = await query;
+      const { data, error: fetchError } = await query;
       
-      if (error) throw error;
+      if (fetchError) {
+        console.error("Error fetching verifications:", fetchError);
+        throw fetchError;
+      }
+      
+      console.log("Fetched verification data:", data);
       
       // Process the data with filtering by search term
       let filteredData = data || [];
@@ -106,12 +113,12 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         updates.admin_notes = adminNotes;
       }
       
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('provider_verifications')
         .update(updates)
         .eq('id', id);
         
-      if (error) throw error;
+      if (updateError) throw updateError;
       
       // If approved, update the user's profile to mark them as verified
       if (status === 'approved') {
@@ -126,12 +133,31 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         
         // Then update the user's profile
         if (verificationData?.user_id) {
-          const { error: updateError } = await supabase
+          const { error: profileUpdateError } = await supabase
             .from('profiles')
-            .update({ is_verified: true })
+            .update({ is_verified: true, role: 'provider' })
             .eq('id', verificationData.user_id);
             
-          if (updateError) throw updateError;
+          if (profileUpdateError) throw profileUpdateError;
+        }
+      } else if (status === 'rejected') {
+        // If rejected, ensure user is not verified
+        const { data: verificationData, error: fetchError } = await supabase
+          .from('provider_verifications')
+          .select('user_id')
+          .eq('id', id)
+          .single();
+          
+        if (fetchError) throw fetchError;
+        
+        // Don't change the user's role, just set is_verified to false
+        if (verificationData?.user_id) {
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ is_verified: false })
+            .eq('id', verificationData.user_id);
+            
+          if (profileUpdateError) throw profileUpdateError;
         }
       }
       
@@ -156,7 +182,7 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('provider_verifications')
         .select(`
           *,
@@ -168,7 +194,9 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         .eq('id', id)
         .single();
         
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+      
+      console.log("Fetched single verification:", data);
       
       // Transform address from JSON to the expected format
       const transformedData = {

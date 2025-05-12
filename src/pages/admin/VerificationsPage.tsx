@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -9,7 +9,7 @@ import {
   VerificationStatus 
 } from '@/hooks/admin/useProviderVerifications';
 
-// Import our new components
+// Import our components
 import VerificationFilter from '@/components/admin/verifications/VerificationFilter';
 import VerificationsList from '@/components/admin/verifications/VerificationsList';
 import VerificationPagination from '@/components/admin/verifications/VerificationPagination';
@@ -17,7 +17,7 @@ import LoadingState from '@/components/admin/verifications/LoadingState';
 import ErrorState from '@/components/admin/verifications/ErrorState';
 
 const VerificationsPage: React.FC = () => {
-  const [filter, setFilter] = useState<VerificationStatus | 'all'>('pending');
+  const [filter, setFilter] = useState<VerificationStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -28,13 +28,30 @@ const VerificationsPage: React.FC = () => {
     verifications, 
     loading, 
     error, 
-    updateVerificationStatus 
+    updateVerificationStatus,
+    refetch
   } = useProviderVerifications({ status: filter, searchTerm });
 
+  // Effect to load initial data
+  useEffect(() => {
+    console.log("VerificationsPage mounted, filter:", filter, "searchTerm:", searchTerm);
+    // Reset to page 1 when filter or search changes
+    setCurrentPage(1);
+  }, [filter, searchTerm]);
+
   // Calculate pagination
-  const totalPages = Math.ceil(verifications.length / itemsPerPage);
+  const totalPages = Math.ceil((verifications?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedVerifications = verifications.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedVerifications = verifications?.slice(startIndex, startIndex + itemsPerPage) || [];
+
+  console.log("Verification data in page:", {
+    total: verifications?.length || 0,
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedVerifications.length,
+    hasError: !!error,
+    isLoading: loading
+  });
 
   const handleQuickApprove = async (id: string, name: string) => {
     const success = await updateVerificationStatus(id, 'approved');
@@ -44,6 +61,8 @@ const VerificationsPage: React.FC = () => {
         title: 'Verification Approved',
         description: `${name}'s verification request has been approved successfully.`,
       });
+      // Force refresh data
+      refetch();
     }
   };
 
@@ -55,6 +74,8 @@ const VerificationsPage: React.FC = () => {
         title: 'Verification Rejected',
         description: `${name}'s verification request has been rejected.`,
       });
+      // Force refresh data
+      refetch();
     }
   };
 

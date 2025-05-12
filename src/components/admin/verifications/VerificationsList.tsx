@@ -40,6 +40,8 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
     }
   };
 
+  console.log("Rendering verification list with items:", verifications.length);
+
   return (
     <div className="overflow-x-auto">
       <Table>
