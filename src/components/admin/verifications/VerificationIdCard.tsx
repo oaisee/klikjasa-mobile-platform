@@ -4,6 +4,7 @@ import { FileImage, ZoomIn, RefreshCw } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VerificationIdCardProps {
   idCardUrl: string;
@@ -15,11 +16,30 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
   const [retryCount, setRetryCount] = useState(0);
   
   // Function to handle retry logic
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setHasError(false);
     setIsImageLoaded(false);
     setRetryCount(prev => prev + 1);
-    console.log("Retrying to load image:", idCardUrl);
+    
+    try {
+      // Check if the file exists in storage
+      const storagePath = idCardUrl.split('/public/verifications/')[1];
+      if (storagePath) {
+        console.log("Checking file existence:", storagePath);
+        const { data, error } = await supabase
+          .storage
+          .from('verifications')
+          .getPublicUrl(storagePath);
+          
+        if (error) {
+          console.error("Storage error:", error);
+        } else {
+          console.log("Public URL data:", data);
+        }
+      }
+    } catch (err) {
+      console.error("Error checking file:", err);
+    }
   };
   
   // Use a modified URL to prevent caching issues
@@ -38,6 +58,11 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
           <div className="text-gray-500 text-center space-y-2">
             <p>Unable to load the ID card image. The file may be corrupted or no longer exists.</p>
             <p className="text-sm">URL: {idCardUrl}</p>
+            
+            {/* Display more detailed error information */}
+            <p className="text-xs text-red-500 mt-2">
+              Try to check if the file exists in the Supabase storage bucket 'verifications'.
+            </p>
           </div>
           <Button 
             variant="outline" 
@@ -58,12 +83,12 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
                 alt="Identity Card"
                 className={`w-full h-full object-contain transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => {
-                  console.log("ID card image loaded successfully");
+                  console.log("ID card image loaded successfully:", imageUrlWithCache);
                   setIsImageLoaded(true);
                   setHasError(false);
                 }}
                 onError={(e) => {
-                  console.error("Failed to load ID card image:", idCardUrl);
+                  console.error("Failed to load ID card image:", imageUrlWithCache);
                   setHasError(true);
                   setIsImageLoaded(false);
                 }}

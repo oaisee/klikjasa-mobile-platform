@@ -52,6 +52,27 @@ export function useFetchVerificationDetail() {
       
       console.log("Fetched verification details:", data);
       
+      // Ensure the ID card URL is properly formatted
+      if (data.id_card_url) {
+        // Check if the URL already contains the storage path
+        if (!data.id_card_url.includes('supabase.co/storage')) {
+          const idCardPath = data.id_card_url.startsWith('id_cards/') 
+            ? data.id_card_url 
+            : `id_cards/${data.id_card_url}`;
+            
+          // Get public URL for the file
+          const { data: urlData } = await supabase
+            .storage
+            .from('verifications')
+            .getPublicUrl(idCardPath);
+            
+          if (urlData) {
+            console.log("Generated public URL for ID card:", urlData.publicUrl);
+            data.id_card_url = urlData.publicUrl;
+          }
+        }
+      }
+      
       // Transform address from JSON to the expected format
       const transformedData = {
         ...data,

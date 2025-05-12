@@ -14,10 +14,32 @@ export const uploadIdCard = async (
   onProgress?: (progress: number) => void
 ): Promise<UploadResult> => {
   try {
-    // Now the bucket exists, so we don't need to create it
     // Report initial progress
     if (onProgress) {
       onProgress(10);
+    }
+    
+    // Check if the bucket exists first
+    const { data: buckets, error: bucketsError } = await supabase
+      .storage
+      .listBuckets();
+      
+    if (bucketsError) {
+      console.error('Error checking buckets:', bucketsError);
+      return {
+        success: false,
+        error: bucketsError.message
+      };
+    }
+    
+    const bucketExists = buckets?.some(bucket => bucket.name === 'verifications');
+    
+    if (!bucketExists) {
+      console.error('Verifications bucket does not exist');
+      return {
+        success: false,
+        error: 'Storage bucket not configured. Please contact an administrator.'
+      };
     }
     
     // Create a unique file name
@@ -25,7 +47,9 @@ export const uploadIdCard = async (
     const fileName = `${userId}-${Math.random().toString().substring(2)}.${fileExt}`;
     const filePath = `id_cards/${fileName}`;
     
-    // Upload file to the existing 'verifications' bucket
+    console.log('Uploading file to:', filePath);
+    
+    // Upload file to the 'verifications' bucket
     const { error: uploadError, data } = await supabase.storage
       .from('verifications')
       .upload(filePath, file, {
@@ -54,6 +78,8 @@ export const uploadIdCard = async (
     if (onProgress) {
       onProgress(100);
     }
+    
+    console.log('Upload successful, public URL:', publicURLData.publicUrl);
     
     return {
       success: true,
