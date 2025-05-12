@@ -9,6 +9,7 @@ export interface User {
   isVerified: boolean;
   balance: number;
   createdAt: string;
+  phone_number?: string;
 }
 
 export interface Service {

@@ -1,21 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Search, RefreshCw, UserCheck, UserX, Shield } from 'lucide-react';
+import { Search, UserCog, Edit, Shield, User as UserIcon } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationNext, 
-  PaginationPrevious 
-} from '@/components/ui/pagination';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { User, UserRole } from '@/types';
 import {
   Table,
   TableBody,
@@ -24,63 +18,50 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from '@/integrations/supabase/client';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'user' | 'provider' | 'admin';
-  is_verified: boolean;
-  balance: number;
-  created_at: string;
-  phone_number?: string;
-}
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
+import { Loader2 } from 'lucide-react';
 
 const UsersPage: React.FC = () => {
-  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'all' | 'user' | 'provider' | 'admin'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const { toast } = useToast();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      // Apply role filter if not 'all'
-      if (filter !== 'all') {
-        query = query.eq('role', filter);
-      }
-      
-      const { data, error } = await query;
-      
+
       if (error) throw error;
-      
-      // Filter by search term if provided
-      let filteredUsers = data || [];
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filteredUsers = filteredUsers.filter(user => 
-          user.name?.toLowerCase().includes(term) || 
-          user.email?.toLowerCase().includes(term) ||
-          user.phone_number?.includes(term)
-        );
-      }
-      
-      setUsers(filteredUsers);
+
+      // Convert the data to match our User interface
+      const transformedData: User[] = (data || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as UserRole,
+        isVerified: user.is_verified,
+        balance: user.balance,
+        createdAt: user.created_at,
+        phone_number: user.phone_number
+      }));
+
+      setUsers(transformedData);
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError(err instanceof Error ? err.message : "Failed to load users");
+      setError(err instanceof Error ? err.message : "Failed to fetch users");
       toast({
         title: "Error",
         description: "Failed to load users. Please try again.",
@@ -90,69 +71,51 @@ const UsersPage: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchUsers();
-  }, [filter]); // Fetch when filter changes
-  
-  // For search, use a debounce approach
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchUsers();
-    }, 300);
-    
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
+  }, []);
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.phone_number && user.phone_number.includes(searchTerm))
+  );
 
   // Calculate pagination
-  const totalPages = Math.ceil(users.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = users.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleUpdateRole = async (userId: string, newRole: 'user' | 'provider' | 'admin') => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Role Updated",
-        description: `User role has been updated to ${newRole} successfully.`
-      });
-      
-      // Refresh the users list
-      fetchUsers();
-    } catch (err) {
-      console.error("Error updating user role:", err);
-      toast({
-        title: "Error",
-        description: "Failed to update user role. Please try again.",
-        variant: "destructive"
-      });
+  const getRoleBadge = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-100">Admin</Badge>;
+      case 'provider':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">Provider</Badge>;
+      case 'user':
+      default:
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">User</Badge>;
     }
   };
 
-  const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(balance);
+  const getVerificationBadge = (isVerified: boolean) => {
+    return isVerified 
+      ? <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>
+      : <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Verified</Badge>;
   };
-  
-  const getUserStatusBadge = (user: User) => {
-    if (user.role === 'admin') {
-      return <Badge className="bg-purple-600">Admin</Badge>;
+
+  const getRoleIcon = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return <Shield className="h-5 w-5 text-purple-500" />;
+      case 'provider':
+        return <UserCog className="h-5 w-5 text-blue-500" />;
+      case 'user':
+      default:
+        return <UserIcon className="h-5 w-5 text-gray-500" />;
     }
-    if (user.role === 'provider') {
-      return user.is_verified ? 
-        <Badge className="bg-green-600">Verified Provider</Badge> : 
-        <Badge variant="outline" className="text-amber-600 border-amber-600">Unverified Provider</Badge>;
-    }
-    return <Badge variant="outline" className="text-blue-600 border-blue-600">User</Badge>;
   };
 
   return (
@@ -160,64 +123,26 @@ const UsersPage: React.FC = () => {
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="text-sm text-gray-500 mb-6">
-            <p>Manage user accounts, update roles, and view user information across the platform.</p>
+            <p>View and manage all users. See their roles, verification status, and balance information.</p>
           </div>
           <Separator className="mb-6" />
           
           <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={filter === 'all' ? 'default' : 'outline'} 
-                onClick={() => setFilter('all')}
-                className={filter === 'all' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
-                size="sm"
-              >
-                All Users
-              </Button>
-              <Button 
-                variant={filter === 'user' ? 'default' : 'outline'} 
-                onClick={() => setFilter('user')}
-                className={filter === 'user' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
-                size="sm"
-              >
-                Customers
-              </Button>
-              <Button 
-                variant={filter === 'provider' ? 'default' : 'outline'} 
-                onClick={() => setFilter('provider')}
-                className={filter === 'provider' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
-                size="sm"
-              >
-                Providers
-              </Button>
-              <Button 
-                variant={filter === 'admin' ? 'default' : 'outline'} 
-                onClick={() => setFilter('admin')}
-                className={filter === 'admin' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
-                size="sm"
-              >
-                Admins
-              </Button>
+            <div className="w-full md:w-64 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Input 
+                placeholder="Search by name, email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9"
+              />
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <div className="w-full md:w-64 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <Input 
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9"
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={fetchUsers}
-                title="Refresh users list"
-              >
-                <RefreshCw size={16} />
-              </Button>
-            </div>
+            <Button 
+              className="bg-klikjasa-purple hover:bg-klikjasa-deepPurple"
+              onClick={fetchUsers}
+            >
+              Refresh Data
+            </Button>
           </div>
           
           {loading ? (
@@ -231,7 +156,7 @@ const UsersPage: React.FC = () => {
               <Button 
                 variant="outline" 
                 className="mt-4"
-                onClick={fetchUsers}
+                onClick={() => window.location.reload()}
               >
                 Try Again
               </Button>
@@ -242,11 +167,12 @@ const UsersPage: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
+                      <TableHead>User</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Verification</TableHead>
                       <TableHead>Balance</TableHead>
-                      <TableHead>Joined Date</TableHead>
+                      <TableHead>Join Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -254,51 +180,34 @@ const UsersPage: React.FC = () => {
                     {paginatedUsers.length > 0 ? (
                       paginatedUsers.map((user) => (
                         <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{getUserStatusBadge(user)}</TableCell>
-                          <TableCell>{formatBalance(user.balance)}</TableCell>
-                          <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-1">
-                              {user.email !== 'admin@klikjasa.com' && (
-                                <>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    onClick={() => handleUpdateRole(user.id, 'user')}
-                                    disabled={user.role === 'user'}
-                                  >
-                                    <UserCheck size={16} className="mr-1" /> User
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => handleUpdateRole(user.id, 'provider')}
-                                    disabled={user.role === 'provider'}
-                                  >
-                                    <UserX size={16} className="mr-1" /> Provider
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                                    onClick={() => handleUpdateRole(user.id, 'admin')}
-                                    disabled={user.role === 'admin'}
-                                  >
-                                    <Shield size={16} className="mr-1" /> Admin
-                                  </Button>
-                                </>
-                              )}
+                          <TableCell>
+                            <div className="flex items-center">
+                              <div className="mr-2">
+                                {getRoleIcon(user.role)}
+                              </div>
+                              <div>
+                                <p className="font-medium">{user.name}</p>
+                                {user.phone_number && (
+                                  <p className="text-xs text-gray-500">{user.phone_number}</p>
+                                )}
+                              </div>
                             </div>
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell>{getVerificationBadge(user.isVerified)}</TableCell>
+                          <TableCell>Rp {user.balance.toLocaleString()}</TableCell>
+                          <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" className="h-8">
+                              <Edit size={16} className="mr-1" /> Edit
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                           No users found matching your criteria
                         </TableCell>
                       </TableRow>

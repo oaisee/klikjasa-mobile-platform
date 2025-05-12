@@ -5,22 +5,28 @@ import { useToast } from '@/hooks/use-toast';
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected';
 
+export interface AddressDetails {
+  province: string;
+  city: string;
+  district: string;
+  village: string;
+  full_address: string;
+}
+
 export interface ProviderVerification {
   id: string;
   user_id: string;
   full_name: string;
   whatsapp_number: string;
-  address: {
-    province: string;
-    city: string;
-    district: string;
-    village: string;
-    full_address: string;
-  };
+  address: AddressDetails;
   id_card_url: string;
   status: VerificationStatus;
   created_at: string;
   admin_notes?: string;
+  profiles?: {
+    name: string;
+    email: string;
+  };
 }
 
 interface UseProviderVerificationsProps {
@@ -71,7 +77,13 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         );
       }
       
-      setVerifications(filteredData);
+      // Transform JSON address to TypeScript interface
+      const transformedData = filteredData.map(item => ({
+        ...item,
+        address: item.address as unknown as AddressDetails
+      }));
+      
+      setVerifications(transformedData as ProviderVerification[]);
     } catch (err) {
       console.error("Error fetching verifications:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch verification requests");
@@ -158,7 +170,13 @@ export function useProviderVerifications({ status, searchTerm }: UseProviderVeri
         
       if (error) throw error;
       
-      return data as ProviderVerification;
+      // Transform address from JSON to the expected format
+      const transformedData = {
+        ...data,
+        address: data.address as unknown as AddressDetails
+      } as ProviderVerification;
+      
+      return transformedData;
     } catch (err) {
       console.error("Error fetching verification:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch verification details");
