@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProviderVerification } from './types/verification';
@@ -12,11 +12,15 @@ export function useFetchVerificationDetail() {
   const { toast } = useToast();
 
   // Fetch a single verification by ID
-  const fetchVerificationById = async (id: string) => {
+  const fetchVerificationById = useCallback(async (id: string) => {
+    if (!id) {
+      setError("Missing verification ID");
+      return null;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      setVerification(null); // Clear existing verification data when fetching new one
       
       console.log("Fetching verification details with ID:", id);
       
@@ -69,7 +73,7 @@ export function useFetchVerificationDetail() {
       setLoading(false);
       return null;
     }
-  };
+  }, [toast]);
 
   return {
     verification,

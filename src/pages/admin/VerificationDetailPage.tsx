@@ -22,32 +22,38 @@ const VerificationDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   
-  const { verification, loading, error: fetchError, fetchVerificationById } = useFetchVerificationDetail();
+  const { 
+    verification, 
+    loading, 
+    error: fetchError, 
+    fetchVerificationById 
+  } = useFetchVerificationDetail();
+  
   const { updateVerificationStatus } = useVerificationActions();
   
   // Load verification data
   useEffect(() => {
-    const loadVerification = async () => {
-      // If there's no ID, show error
-      if (!id) {
-        console.log("No ID parameter provided");
-        setError("Missing verification ID");
-        return;
-      }
-      
-      // Validate UUID format before making API call
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(id)) {
-        console.log("ID is not a valid UUID format:", id);
-        setError(`Invalid verification ID format: ${id}`);
-        return;
-      }
-      
-      console.log("Fetching verification with ID:", id);
+    if (!id) {
+      console.error("No ID parameter provided");
+      setError("Missing verification ID");
+      return;
+    }
+    
+    // Validate UUID format before making API call
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.error("ID is not a valid UUID format:", id);
+      setError(`Invalid verification ID format: ${id}`);
+      return;
+    }
+    
+    console.log("Starting fetch for verification with ID:", id);
+    
+    const fetchData = async () => {
       await fetchVerificationById(id);
     };
     
-    loadVerification();
+    fetchData();
   }, [id, fetchVerificationById]);
 
   // Combine errors from state and fetch operation

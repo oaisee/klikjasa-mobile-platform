@@ -42,13 +42,15 @@ export function useProviderVerifications(props: UseProviderVerificationsProps = 
   return {
     // Verification list data & operations
     verifications,
-    loading,
-    error,
+    loading: fetchLoading,
+    error: fetchError,
     refetch,
     
     // Single verification operations
     fetchVerificationById,
     verification,
+    verificationLoading: detailLoading,
+    verificationError: detailError,
     
     // Actions
     updateVerificationStatus,
