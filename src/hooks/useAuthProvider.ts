@@ -12,6 +12,7 @@ export const useAuthProvider = () => {
     session, 
     setProfile, 
     setRole, 
+    role,  // Make sure we extract 'role' from useAuthState
     loading 
   } = useAuthState();
 
@@ -66,7 +67,7 @@ export const useAuthProvider = () => {
     profile,
     session,
     isAuthenticated: !!user,
-    role,
+    role, // This was missing or not properly extracted
     loading,
     login: handleLogin,
     register: handleRegister,
