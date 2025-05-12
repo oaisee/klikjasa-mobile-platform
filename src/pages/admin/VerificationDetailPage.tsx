@@ -5,9 +5,9 @@ import { ArrowLeft } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useProviderVerifications, ProviderVerification } from '@/hooks/admin/useProviderVerifications';
+import { useProviderVerifications } from '@/hooks/admin/useProviderVerifications';
 
-// Import our new components
+// Import our components
 import VerificationHeader from '@/components/admin/verifications/VerificationHeader';
 import VerificationPersonalInfo from '@/components/admin/verifications/VerificationPersonalInfo';
 import VerificationIdCard from '@/components/admin/verifications/VerificationIdCard';
@@ -19,19 +19,21 @@ import DetailPageErrorState from '@/components/admin/verifications/DetailPageErr
 const VerificationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [verification, setVerification] = useState<ProviderVerification | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { fetchVerificationById, updateVerificationStatus } = useProviderVerifications();
+  const { fetchVerificationById, verification, loading, updateVerificationStatus } = useProviderVerifications();
   
   // Load verification data
   useEffect(() => {
     const loadVerification = async () => {
-      // If there's no ID or ID is ":id" (route parameter placeholder), navigate back
-      if (!id || id === ":id") {
-        console.log("Invalid ID parameter:", id);
-        setError("Invalid verification ID");
+      setDataLoading(true);
+      setError(null);
+      
+      // If there's no ID, navigate back
+      if (!id) {
+        console.log("No ID parameter provided");
+        setError("Missing verification ID");
         setDataLoading(false);
         return;
       }
@@ -47,13 +49,9 @@ const VerificationDetailPage: React.FC = () => {
       
       try {
         console.log("Fetching verification with ID:", id);
-        setDataLoading(true);
         const data = await fetchVerificationById(id);
         
-        if (data) {
-          console.log("Verification data loaded successfully:", data);
-          setVerification(data);
-        } else {
+        if (!data) {
           console.log("No verification data returned for ID:", id);
           setError("Verification request not found");
         }
@@ -76,7 +74,7 @@ const VerificationDetailPage: React.FC = () => {
         </Button>
       </div>
       
-      {dataLoading ? (
+      {(dataLoading || loading) ? (
         <DetailPageLoadingState />
       ) : error || !verification ? (
         <DetailPageErrorState error={error} />

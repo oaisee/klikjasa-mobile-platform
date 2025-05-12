@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProviderVerification } from './types/verification';
@@ -17,7 +17,7 @@ export function useFetchVerificationDetail() {
       setLoading(true);
       setError(null);
       
-      console.log("Fetching single verification with ID:", id);
+      console.log("Fetching verification details with ID:", id);
       
       const { data, error: fetchError } = await supabase
         .from('provider_verifications')
@@ -32,7 +32,7 @@ export function useFetchVerificationDetail() {
         .single();
         
       if (fetchError) {
-        console.error("Error fetching verification:", fetchError);
+        console.error("Error fetching verification details:", fetchError);
         throw fetchError;
       }
       
@@ -43,7 +43,7 @@ export function useFetchVerificationDetail() {
         return null;
       }
       
-      console.log("Fetched single verification:", data);
+      console.log("Fetched verification details:", data);
       
       // Transform address from JSON to the expected format
       const transformedData = {
@@ -54,7 +54,7 @@ export function useFetchVerificationDetail() {
       setVerification(transformedData);
       return transformedData;
     } catch (err) {
-      console.error("Error fetching verification:", err);
+      console.error("Error fetching verification details:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch verification details";
       setError(errorMessage);
       toast({
