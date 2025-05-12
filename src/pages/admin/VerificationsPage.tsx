@@ -9,74 +9,67 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  useProviderVerifications, 
+  VerificationStatus 
+} from '@/hooks/admin/useProviderVerifications';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Loader2 } from 'lucide-react';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
 
 const VerificationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState<VerificationStatus | 'all'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { toast } = useToast();
-  const [loading, setLoading] = useState<{[key: string]: boolean}>({});
-  
-  // Mock data - would be fetched from the API
-  const verifications = [
-    { id: 1, providerName: 'Ahmad Supri', phoneNumber: '0812-3456-7890', submittedDate: '2025-05-01', status: 'pending' },
-    { id: 2, providerName: 'Budi Santoso', phoneNumber: '0813-2345-6789', submittedDate: '2025-05-02', status: 'pending' },
-    { id: 3, providerName: 'Citra Dewi', phoneNumber: '0857-1234-5678', submittedDate: '2025-05-03', status: 'pending' },
-    { id: 4, providerName: 'Dewi Anggraini', phoneNumber: '0878-9876-5432', submittedDate: '2025-05-04', status: 'approved' },
-    { id: 5, providerName: 'Eko Prasetyo', phoneNumber: '0819-8765-4321', submittedDate: '2025-05-05', status: 'rejected' },
-    { id: 6, providerName: 'Fajar Rahman', phoneNumber: '0821-1234-5678', submittedDate: '2025-05-06', status: 'pending' },
-    { id: 7, providerName: 'Gita Putri', phoneNumber: '0822-2345-6789', submittedDate: '2025-05-07', status: 'approved' },
-    { id: 8, providerName: 'Hadi Purnomo', phoneNumber: '0823-3456-7890', submittedDate: '2025-05-08', status: 'rejected' },
-  ];
 
-  const filteredVerifications = verifications
-    .filter(v => filter === 'all' || v.status === filter)
-    .filter(v => 
-      v.providerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      v.phoneNumber.includes(searchTerm)
-    );
+  // Use our custom hook to fetch verifications
+  const { 
+    verifications, 
+    loading, 
+    error, 
+    updateVerificationStatus 
+  } = useProviderVerifications({ status: filter, searchTerm });
 
-  const handleQuickApprove = async (id: number, name: string) => {
-    setLoading(prev => ({ ...prev, [`approve-${id}`]: true }));
+  // Calculate pagination
+  const totalPages = Math.ceil(verifications.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedVerifications = verifications.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleQuickApprove = async (id: string, name: string) => {
+    const success = await updateVerificationStatus(id, 'approved');
     
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    if (success) {
       toast({
         title: 'Verification Approved',
         description: `${name}'s verification request has been approved successfully.`,
       });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to approve verification request. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, [`approve-${id}`]: false }));
     }
   };
 
-  const handleQuickReject = async (id: number, name: string) => {
-    setLoading(prev => ({ ...prev, [`reject-${id}`]: true }));
+  const handleQuickReject = async (id: string, name: string) => {
+    const success = await updateVerificationStatus(id, 'rejected');
     
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    if (success) {
       toast({
         title: 'Verification Rejected',
         description: `${name}'s verification request has been rejected.`,
       });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to reject verification request. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, [`reject-${id}`]: false }));
     }
   };
 
@@ -148,74 +141,114 @@ const VerificationsPage: React.FC = () => {
             </div>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="pb-3 pt-1 font-medium">Provider Name</th>
-                  <th className="pb-3 pt-1 font-medium">Phone Number</th>
-                  <th className="pb-3 pt-1 font-medium">Submitted Date</th>
-                  <th className="pb-3 pt-1 font-medium">Status</th>
-                  <th className="pb-3 pt-1 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVerifications.length > 0 ? (
-                  filteredVerifications.map((verification) => (
-                    <tr key={verification.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4">{verification.providerName}</td>
-                      <td className="py-4">{verification.phoneNumber}</td>
-                      <td className="py-4">{new Date(verification.submittedDate).toLocaleDateString()}</td>
-                      <td className="py-4">{getStatusBadge(verification.status)}</td>
-                      <td className="py-4">
-                        <div className="flex space-x-2 justify-end">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/verifications/${verification.id}`)}
-                            className="h-8"
-                          >
-                            <Eye size={16} className="mr-1" /> View
-                          </Button>
-                          
-                          {verification.status === 'pending' && (
-                            <>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 text-klikjasa-purple animate-spin" />
+              <p className="ml-2 text-gray-500">Loading verification requests...</p>
+            </div>
+          ) : error ? (
+            <div className="py-8 text-center">
+              <p className="text-red-500">{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Provider Name</TableHead>
+                      <TableHead>Phone Number</TableHead>
+                      <TableHead>Submitted Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedVerifications.length > 0 ? (
+                      paginatedVerifications.map((verification) => (
+                        <TableRow key={verification.id}>
+                          <TableCell>{verification.full_name}</TableCell>
+                          <TableCell>{verification.whatsapp_number}</TableCell>
+                          <TableCell>{new Date(verification.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>{getStatusBadge(verification.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex space-x-2 justify-end">
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
-                                onClick={() => handleQuickApprove(verification.id, verification.providerName)}
-                                disabled={loading[`approve-${verification.id}`]}
+                                onClick={() => navigate(`/admin/verifications/${verification.id}`)}
+                                className="h-8"
                               >
-                                <Check size={16} className="mr-1" /> 
-                                {loading[`approve-${verification.id}`] ? 'Approving...' : 'Approve'}
+                                <Eye size={16} className="mr-1" /> View
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
-                                onClick={() => handleQuickReject(verification.id, verification.providerName)}
-                                disabled={loading[`reject-${verification.id}`]}
-                              >
-                                <X size={16} className="mr-1" /> 
-                                {loading[`reject-${verification.id}`] ? 'Rejecting...' : 'Reject'}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
-                      No verification requests found matching your criteria
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                              
+                              {verification.status === 'pending' && (
+                                <>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
+                                    onClick={() => handleQuickApprove(verification.id, verification.full_name)}
+                                  >
+                                    <Check size={16} className="mr-1" /> Approve
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                                    onClick={() => handleQuickReject(verification.id, verification.full_name)}
+                                  >
+                                    <X size={16} className="mr-1" /> Reject
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          No verification requests found matching your criteria
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-4 py-2">
+                        Page {currentPage} of {totalPages || 1}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
     </AdminLayout>

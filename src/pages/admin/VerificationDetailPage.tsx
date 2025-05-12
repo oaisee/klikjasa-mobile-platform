@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, X, Phone, MapPin, Clock, User, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, Check, X, Phone, MapPin, Clock, User, FileText, Calendar, Mail } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,75 +9,97 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  useProviderVerifications,
+  ProviderVerification
+} from '@/hooks/admin/useProviderVerifications';
+import { Loader2 } from 'lucide-react';
 
 const VerificationDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const [verification, setVerification] = useState<ProviderVerification | null>(null);
   const [adminNotes, setAdminNotes] = useState<string>('');
+  const [dataLoading, setDataLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { fetchVerificationById, updateVerificationStatus } = useProviderVerifications();
+  
+  // Checklist state
+  const [checklist, setChecklist] = useState({
+    idMatch: false,
+    photoClear: false,
+    idValid: false,
+    addressComplete: false
+  });
 
-  // Mock data - would be fetched from the API based on the ID
-  const verification = {
-    id: Number(id),
-    providerName: 'Ahmad Supri',
-    email: 'ahmad.supri@example.com',
-    phoneNumber: '0812-3456-7890',
-    address: 'Jl. Gatot Subroto No. 123, Jakarta Selatan',
-    province: 'DKI Jakarta',
-    city: 'Jakarta Selatan',
-    district: 'Setiabudi',
-    postalCode: '12930',
-    identityNumber: '3171234567890001',
-    submittedDate: '2025-05-01T14:30:00',
-    status: 'pending',
-    idCardUrl: 'https://via.placeholder.com/800x500?text=KTP+Image'
-  };
+  // Load verification data
+  useEffect(() => {
+    const loadVerification = async () => {
+      if (!id) return;
+      
+      try {
+        setDataLoading(true);
+        const data = await fetchVerificationById(id);
+        
+        if (data) {
+          setVerification(data);
+          if (data.admin_notes) {
+            setAdminNotes(data.admin_notes);
+          }
+        } else {
+          setError("Verification request not found");
+        }
+      } catch (err) {
+        console.error("Error loading verification:", err);
+        setError("Failed to load verification details");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    
+    loadVerification();
+  }, [id, fetchVerificationById]);
 
   const handleApprove = async () => {
+    if (!verification || !id) return;
+    
     setLoading('approving');
     
-    // In a real application, this would be an API call
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const success = await updateVerificationStatus(id, 'approved', adminNotes);
       
-      toast({
-        title: 'Verification Approved',
-        description: `${verification.providerName}'s account has been approved successfully.`,
-      });
-      
-      navigate('/admin/verifications');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to approve verification. Please try again.',
-        variant: 'destructive',
-      });
+      if (success) {
+        toast({
+          title: 'Verification Approved',
+          description: `${verification.full_name}'s account has been approved successfully.`,
+        });
+        
+        navigate('/admin/verifications');
+      }
     } finally {
       setLoading(null);
     }
   };
 
   const handleReject = async () => {
+    if (!verification || !id) return;
+    
     setLoading('rejecting');
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const success = await updateVerificationStatus(id, 'rejected', adminNotes);
       
-      toast({
-        title: 'Verification Rejected',
-        description: `${verification.providerName}'s verification request has been rejected.`,
-      });
-      
-      navigate('/admin/verifications');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to reject verification. Please try again.',
-        variant: 'destructive',
-      });
+      if (success) {
+        toast({
+          title: 'Verification Rejected',
+          description: `${verification.full_name}'s verification request has been rejected.`,
+        });
+        
+        navigate('/admin/verifications');
+      }
     } finally {
       setLoading(null);
     }
@@ -96,6 +118,32 @@ const VerificationDetailPage: React.FC = () => {
     }
   };
 
+  // Show loading state
+  if (dataLoading) {
+    return (
+      <AdminLayout title="Verification Details">
+        <div className="flex flex-col items-center justify-center p-12">
+          <Loader2 className="h-12 w-12 text-klikjasa-purple animate-spin" />
+          <p className="mt-4 text-gray-600">Loading verification details...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Show error state
+  if (error || !verification) {
+    return (
+      <AdminLayout title="Verification Details">
+        <div className="p-6 bg-red-50 rounded-lg border border-red-200 text-center">
+          <p className="text-red-600 mb-4">{error || "Verification not found"}</p>
+          <Button variant="outline" onClick={() => navigate('/admin/verifications')}>
+            Back to Verifications
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout title="Verification Details">
       <div className="mb-4">
@@ -110,8 +158,8 @@ const VerificationDetailPage: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold">{verification.providerName}</h2>
-                  <p className="text-gray-500">{verification.email}</p>
+                  <h2 className="text-2xl font-bold">{verification.full_name}</h2>
+                  <p className="text-gray-500">{(verification as any).profiles?.email || "No email available"}</p>
                 </div>
                 {getStatusBadge(verification.status)}
               </div>
@@ -121,16 +169,16 @@ const VerificationDetailPage: React.FC = () => {
                   <div className="flex items-center">
                     <Phone size={18} className="mr-3 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Phone Number</p>
-                      <p>{verification.phoneNumber}</p>
+                      <p className="text-sm font-medium text-gray-500">WhatsApp Number</p>
+                      <p>{verification.whatsapp_number}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center">
-                    <Calendar size={18} className="mr-3 text-gray-500" />
+                    <Mail size={18} className="mr-3 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium text-gray-500">ID Card Number</p>
-                      <p>{verification.identityNumber}</p>
+                      <p className="text-sm font-medium text-gray-500">Email</p>
+                      <p>{(verification as any).profiles?.email || "No email available"}</p>
                     </div>
                   </div>
                   
@@ -138,7 +186,7 @@ const VerificationDetailPage: React.FC = () => {
                     <Clock size={18} className="mr-3 text-gray-500" />
                     <div>
                       <p className="text-sm font-medium text-gray-500">Submitted Date</p>
-                      <p>{new Date(verification.submittedDate).toLocaleString()}</p>
+                      <p>{new Date(verification.created_at).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -148,24 +196,24 @@ const VerificationDetailPage: React.FC = () => {
                     <MapPin size={18} className="mr-3 mt-1 text-gray-500" />
                     <div>
                       <p className="text-sm font-medium text-gray-500">Address</p>
-                      <p>{verification.address}</p>
+                      <p>{verification.address.full_address}</p>
                       
                       <div className="grid grid-cols-2 gap-4 mt-2">
                         <div>
                           <p className="text-xs text-gray-500">Province</p>
-                          <p className="text-sm">{verification.province}</p>
+                          <p className="text-sm">{verification.address.province}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">City</p>
-                          <p className="text-sm">{verification.city}</p>
+                          <p className="text-sm">{verification.address.city}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500">District</p>
-                          <p className="text-sm">{verification.district}</p>
+                          <p className="text-sm">{verification.address.district}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Postal Code</p>
-                          <p className="text-sm">{verification.postalCode}</p>
+                          <p className="text-xs text-gray-500">Village</p>
+                          <p className="text-sm">{verification.address.village}</p>
                         </div>
                       </div>
                     </div>
@@ -183,9 +231,14 @@ const VerificationDetailPage: React.FC = () => {
               </h3>
               <div className="border rounded-md overflow-hidden">
                 <img 
-                  src={verification.idCardUrl} 
+                  src={verification.id_card_url} 
                   alt="Identity Card" 
                   className="w-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null; 
+                    target.src = 'https://via.placeholder.com/800x500?text=Image+Not+Found';
+                  }}
                 />
               </div>
               <p className="text-sm text-gray-500 mt-2">
@@ -250,6 +303,8 @@ const VerificationDetailPage: React.FC = () => {
                     type="checkbox" 
                     id="check-id" 
                     className="mt-1 mr-3"
+                    checked={checklist.idMatch}
+                    onChange={(e) => setChecklist({...checklist, idMatch: e.target.checked})}
                   />
                   <label htmlFor="check-id" className="text-sm">
                     ID Card matches the provided personal information
@@ -260,6 +315,8 @@ const VerificationDetailPage: React.FC = () => {
                     type="checkbox" 
                     id="check-photo" 
                     className="mt-1 mr-3"
+                    checked={checklist.photoClear}
+                    onChange={(e) => setChecklist({...checklist, photoClear: e.target.checked})}
                   />
                   <label htmlFor="check-photo" className="text-sm">
                     Photo on ID is clear and identifiable
@@ -270,6 +327,8 @@ const VerificationDetailPage: React.FC = () => {
                     type="checkbox" 
                     id="check-valid" 
                     className="mt-1 mr-3"
+                    checked={checklist.idValid}
+                    onChange={(e) => setChecklist({...checklist, idValid: e.target.checked})}
                   />
                   <label htmlFor="check-valid" className="text-sm">
                     ID Card is valid and not expired
@@ -280,6 +339,8 @@ const VerificationDetailPage: React.FC = () => {
                     type="checkbox" 
                     id="check-address" 
                     className="mt-1 mr-3"
+                    checked={checklist.addressComplete}
+                    onChange={(e) => setChecklist({...checklist, addressComplete: e.target.checked})}
                   />
                   <label htmlFor="check-address" className="text-sm">
                     Address information is complete and valid

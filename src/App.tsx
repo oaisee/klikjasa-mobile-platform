@@ -21,6 +21,7 @@ import AdminRoute from "./components/auth/AdminRoute";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import VerificationsPage from "./pages/admin/VerificationsPage";
 import VerificationDetailPage from "./pages/admin/VerificationDetailPage";
+import UsersPage from "./pages/admin/UsersPage";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <AdminRoute>
                   <VerificationDetailPage />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users" 
+              element={
+                <AdminRoute>
+                  <UsersPage />
                 </AdminRoute>
               } 
             />
