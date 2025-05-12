@@ -42,10 +42,10 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
       navigate('/', { replace: true });
     }
     
-    // If not authenticated at all, redirect to admin login
+    // If not authenticated at all, redirect to main auth page
     if (!isAuthenticated) {
-      console.log("Not authenticated, redirecting to admin login");
-      navigate('/admin/login', { replace: true, state: { from: location } });
+      console.log("Not authenticated, redirecting to main auth page");
+      navigate('/auth', { replace: true, state: { from: location } });
     }
   }, [loading, isAuthenticated, isAdmin, toast, navigate, user, role, location]);
 

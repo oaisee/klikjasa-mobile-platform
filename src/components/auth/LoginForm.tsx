@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,10 @@ const LoginForm = () => {
   const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the intended destination from location state, if any
+  const from = location.state?.from?.pathname;
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -40,11 +44,11 @@ const LoginForm = () => {
         console.log('Admin login successful, redirecting to admin panel');
         // Add delay to ensure state is updated
         setTimeout(() => {
-          navigate('/admin');
+          navigate(from || '/admin');
         }, 1000);
       } else {
         console.log('Regular user login successful, redirecting to home page');
-        navigate('/');
+        navigate(from || '/');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.';
@@ -67,6 +71,12 @@ const LoginForm = () => {
           <AlertDescription>{authError}</AlertDescription>
         </Alert>
       )}
+      
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-500">
+          Use <strong>admin@klikjasa.com</strong> with admin password for admin access
+        </p>
+      </div>
       
       <form onSubmit={handleLoginSubmit} className="space-y-4">
         <div className="space-y-2">

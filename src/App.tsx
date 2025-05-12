@@ -18,7 +18,6 @@ import NotFound from "./pages/NotFound";
 
 // Admin components
 import AdminRoute from "./components/auth/AdminRoute";
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import VerificationsPage from "./pages/admin/VerificationsPage";
 import VerificationDetailPage from "./pages/admin/VerificationDetailPage";
@@ -34,7 +33,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Admin Routes - No layout wrapper */}
-            <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route 
               path="/admin" 
               element={

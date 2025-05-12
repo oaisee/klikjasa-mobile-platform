@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
@@ -10,20 +10,24 @@ import RegisterForm from './auth/RegisterForm';
 const AuthForm = () => {
   const { role, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the intended destination from location state, if any
+  const from = location.state?.from?.pathname;
 
   // Check if user is already logged in and redirect accordingly
   useEffect(() => {
     if (user?.email === 'admin@klikjasa.com' || role === 'admin') {
       console.log('Admin user detected, redirecting to admin panel');
       setTimeout(() => {
-        navigate('/admin');
+        navigate(from || '/admin');
       }, 500);
     } else if (user) {
       // If regular user, redirect to home
       console.log('Regular user detected, redirecting to home page');
-      navigate('/');
+      navigate(from || '/');
     }
-  }, [user, role, navigate]);
+  }, [user, role, navigate, from]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4">
