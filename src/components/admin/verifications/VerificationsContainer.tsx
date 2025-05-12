@@ -39,6 +39,9 @@ const VerificationsContainer: React.FC<VerificationsContainerProps> = ({
   onQuickApprove,
   onQuickReject
 }) => {
+  // Determine if filters are active
+  const isFilterActive = filter !== 'all' || searchTerm.trim() !== '';
+
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
@@ -73,7 +76,10 @@ const VerificationsContainer: React.FC<VerificationsContainerProps> = ({
             />
           </>
         ) : (
-          <EmptyStateMessage />
+          <EmptyStateMessage 
+            filterActive={isFilterActive} 
+            message={isFilterActive ? "No verification requests match your filters" : "No verification requests found"}
+          />
         )}
       </CardContent>
     </Card>

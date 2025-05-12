@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -34,14 +34,16 @@ const VerificationsPage: React.FC = () => {
     itemsPerPage
   });
 
-  console.log("Verification data in page:", {
-    total: verifications?.length || 0,
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedVerifications.length,
-    hasError: !!error,
-    isLoading: loading
-  });
+  // Add effect to log when verification data changes
+  useEffect(() => {
+    console.log("Verification data updated:", {
+      total: verifications?.length || 0,
+      filter,
+      searchTerm,
+      hasError: !!error,
+      isLoading: loading
+    });
+  }, [verifications, filter, searchTerm, error, loading]);
 
   const handleQuickApprove = async (id: string, name: string) => {
     const success = await updateVerificationStatus(id, 'approved');
