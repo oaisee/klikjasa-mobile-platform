@@ -58,55 +58,47 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {safeVerifications.length > 0 ? (
-            safeVerifications.map((verification) => (
-              <TableRow key={verification.id}>
-                <TableCell>{verification.full_name || 'Unknown'}</TableCell>
-                <TableCell>{verification.whatsapp_number || 'Not provided'}</TableCell>
-                <TableCell>{verification.created_at ? new Date(verification.created_at).toLocaleDateString() : 'Unknown'}</TableCell>
-                <TableCell>{getStatusBadge(verification.status)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex space-x-2 justify-end">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate(`/admin/verifications/${verification.id}`)}
-                      className="h-8"
-                    >
-                      <Eye size={16} className="mr-1" /> View
-                    </Button>
-                    
-                    {verification.status === 'pending' && (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
-                          onClick={() => onQuickApprove(verification.id, verification.full_name || 'Unknown')}
-                        >
-                          <Check size={16} className="mr-1" /> Approve
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
-                          onClick={() => onQuickReject(verification.id, verification.full_name || 'Unknown')}
-                        >
-                          <X size={16} className="mr-1" /> Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                No verification requests found matching your criteria
+          {safeVerifications.map((verification) => (
+            <TableRow key={verification.id}>
+              <TableCell>{verification.full_name || 'Unknown'}</TableCell>
+              <TableCell>{verification.whatsapp_number || 'Not provided'}</TableCell>
+              <TableCell>{verification.created_at ? new Date(verification.created_at).toLocaleDateString() : 'Unknown'}</TableCell>
+              <TableCell>{getStatusBadge(verification.status)}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex space-x-2 justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate(`/admin/verifications/${verification.id}`)}
+                    className="h-8"
+                  >
+                    <Eye size={16} className="mr-1" /> View
+                  </Button>
+                  
+                  {verification.status === 'pending' && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
+                        onClick={() => onQuickApprove(verification.id, verification.full_name || 'Unknown')}
+                      >
+                        <Check size={16} className="mr-1" /> Approve
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                        onClick={() => onQuickReject(verification.id, verification.full_name || 'Unknown')}
+                      >
+                        <X size={16} className="mr-1" /> Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>

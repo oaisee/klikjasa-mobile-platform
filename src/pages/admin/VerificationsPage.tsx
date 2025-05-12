@@ -1,25 +1,17 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { 
   VerificationStatus,
-  useProviderVerifications,
-  ProviderVerification
+  useProviderVerifications
 } from '@/hooks/admin/useProviderVerifications';
-
-// Import our components
-import VerificationFilter from '@/components/admin/verifications/VerificationFilter';
-import VerificationsList from '@/components/admin/verifications/VerificationsList';
-import VerificationPagination from '@/components/admin/verifications/VerificationPagination';
-import LoadingState from '@/components/admin/verifications/LoadingState';
-import ErrorState from '@/components/admin/verifications/ErrorState';
+import VerificationsContainer from '@/components/admin/verifications/VerificationsContainer';
+import { usePagination } from '@/hooks/admin/usePagination';
 
 const VerificationsPage: React.FC = () => {
   const [filter, setFilter] = useState<VerificationStatus | 'all'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -31,10 +23,16 @@ const VerificationsPage: React.FC = () => {
     updateVerificationStatus
   } = useProviderVerifications({ status: filter, searchTerm });
 
-  // Calculate pagination
-  const totalPages = Math.ceil((verifications?.length || 0) / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedVerifications = verifications?.slice(startIndex, startIndex + itemsPerPage) || [];
+  // Use the pagination hook
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems: paginatedVerifications
+  } = usePagination({
+    items: verifications,
+    itemsPerPage
+  });
 
   console.log("Verification data in page:", {
     total: verifications?.length || 0,
@@ -69,50 +67,22 @@ const VerificationsPage: React.FC = () => {
     }
   };
 
-  // Effect to load initial data and reset pagination
-  useEffect(() => {
-    console.log("VerificationsPage filter/search changed:", filter, "searchTerm:", searchTerm);
-    // Reset to page 1 when filter or search changes
-    setCurrentPage(1);
-  }, [filter, searchTerm]);
-
   return (
     <AdminLayout title="Provider Verifications">
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="text-sm text-gray-500 mb-6">
-            <p>Review and manage provider verification requests. Approve or reject applications after reviewing their credentials and identification documents.</p>
-          </div>
-          <Separator className="mb-6" />
-          
-          <VerificationFilter
-            filter={filter}
-            setFilter={setFilter}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-          />
-          
-          {loading ? (
-            <LoadingState />
-          ) : error ? (
-            <ErrorState error={error} />
-          ) : (
-            <>
-              <VerificationsList
-                verifications={paginatedVerifications}
-                onQuickApprove={handleQuickApprove}
-                onQuickReject={handleQuickReject}
-              />
-
-              <VerificationPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <VerificationsContainer
+        filter={filter}
+        setFilter={setFilter}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        verifications={paginatedVerifications}
+        loading={loading}
+        error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+        onQuickApprove={handleQuickApprove}
+        onQuickReject={handleQuickReject}
+      />
     </AdminLayout>
   );
 };
