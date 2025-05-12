@@ -12,6 +12,7 @@ import SearchPage from "./pages/SearchPage";
 import ServiceDetailPage from "./pages/ServiceDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
+import TopUpPage from "./pages/TopUpPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/service/:id" element={<ServiceDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/topup" element={<TopUpPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

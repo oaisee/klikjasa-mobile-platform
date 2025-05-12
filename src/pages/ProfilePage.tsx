@@ -2,14 +2,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  User, 
+  User as UserIcon, 
   Wallet, 
   LogOut, 
   ArrowRightLeft, 
   Edit3, 
   Shield, 
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -26,31 +27,55 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
 const ProfilePage = () => {
-  const { user, logout, role, switchRole } = useAuth();
+  const { user, profile, isAuthenticated, logout, role, switchRole, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  if (!user) {
-    navigate('/auth');
-    return null;
+  // Redirect to auth page if not authenticated
+  React.useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 text-klikjasa-purple animate-spin" />
+        <p className="mt-4 text-gray-600">Loading profile...</p>
+      </div>
+    );
   }
 
-  const handleLogout = () => {
+  if (!user || !profile) {
+    return null; // Will redirect due to useEffect
+  }
+
+  const handleLogout = async () => {
     setIsLoggingOut(true);
-    setTimeout(() => {
-      logout();
+    try {
+      await logout();
       navigate('/');
       toast({
         title: 'Logged out',
         description: 'You have been logged out successfully'
       });
-    }, 500);
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to log out. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
-  const handleRoleSwitch = (newRole: 'user' | 'provider') => {
-    if (newRole === 'provider' && !user.isVerified) {
+  const handleRoleSwitch = async (newRole: 'user' | 'provider') => {
+    if (newRole === 'provider' && !profile.is_verified) {
       toast({
         title: 'Verification Required',
         description: 'You need to complete verification to access provider features',
@@ -60,12 +85,17 @@ const ProfilePage = () => {
       return;
     }
     
-    switchRole(newRole);
-    setShowRoleDialog(false);
-    toast({
-      title: 'Role Switched',
-      description: `You are now using KlikJasa as a ${newRole === 'user' ? 'Customer' : 'Service Provider'}`
-    });
+    try {
+      await switchRole(newRole);
+      setShowRoleDialog(false);
+    } catch (error) {
+      console.error('Role switch error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to switch role. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -79,11 +109,11 @@ const ProfilePage = () => {
       <div className="bg-white mt-3 p-5">
         <div className="flex items-center">
           <div className="h-16 w-16 rounded-full bg-klikjasa-cream flex items-center justify-center">
-            <User className="h-8 w-8 text-klikjasa-deepPurple" />
+            <UserIcon className="h-8 w-8 text-klikjasa-deepPurple" />
           </div>
           <div className="ml-4">
-            <h2 className="font-semibold text-lg">{user.name}</h2>
-            <p className="text-gray-600 text-sm">{user.email}</p>
+            <h2 className="font-semibold text-lg">{profile.name}</h2>
+            <p className="text-gray-600 text-sm">{profile.email}</p>
             <div className="flex items-center mt-1">
               <span className={`text-xs px-2 py-1 rounded-full ${
                 role === 'user' ? 'bg-klikjasa-cream text-klikjasa-deepPurple' : 
@@ -92,7 +122,7 @@ const ProfilePage = () => {
               }`}>
                 {role === 'user' ? 'Customer' : role === 'provider' ? 'Service Provider' : 'Admin'}
               </span>
-              {user.isVerified && (
+              {profile.is_verified && (
                 <span className="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 flex items-center">
                   <Shield className="h-3 w-3 mr-1" />
                   Verified
@@ -106,15 +136,12 @@ const ProfilePage = () => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-600">Balance</p>
-              <p className="text-xl font-semibold">{formatCurrency(user.balance)}</p>
+              <p className="text-xl font-semibold">{formatCurrency(profile.balance || 0)}</p>
             </div>
             <Button 
               variant="outline" 
               className="text-klikjasa-purple border-klikjasa-purple"
-              onClick={() => toast({
-                title: 'Top Up',
-                description: 'Top up feature will be available in the next update'
-              })}
+              onClick={() => navigate('/topup')}
             >
               Top Up
             </Button>
@@ -136,7 +163,7 @@ const ProfilePage = () => {
         <h3 className="font-semibold mb-3">Account</h3>
         
         {/* Role Switching Option */}
-        {user.isVerified && (
+        {profile.is_verified && (
           <>
             <button 
               className="w-full flex justify-between items-center py-3"
@@ -153,7 +180,7 @@ const ProfilePage = () => {
         )}
         
         {/* Provider Verification Option */}
-        {!user.isVerified && role === 'user' && (
+        {!profile.is_verified && role === 'user' && (
           <>
             <button 
               className="w-full flex justify-between items-center py-3"
@@ -227,7 +254,7 @@ const ProfilePage = () => {
               variant={role === 'user' ? 'default' : 'outline'}
               onClick={() => handleRoleSwitch('user')}
             >
-              <User className="mr-2 h-5 w-5" />
+              <UserIcon className="mr-2 h-5 w-5" />
               Customer Mode
             </Button>
             

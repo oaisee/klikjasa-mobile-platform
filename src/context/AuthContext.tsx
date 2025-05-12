@@ -1,50 +1,22 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, UserRole } from '@/types';
+import { User, Session } from '@supabase/supabase-js';
+import { UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
+  profile: any | null;
+  session: Session | null;
   isAuthenticated: boolean;
   role: UserRole;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
-  switchRole: (role: UserRole) => void;
+  logout: () => Promise<void>;
+  switchRole: (role: UserRole) => Promise<void>;
 }
-
-// Mock user data for demo purposes
-const mockUsers = [
-  {
-    id: '1',
-    email: 'user@example.com',
-    name: 'John Doe',
-    role: 'user' as UserRole,
-    isVerified: true,
-    balance: 100000,
-    password: 'password123',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    email: 'provider@example.com',
-    name: 'Jane Smith',
-    role: 'provider' as UserRole,
-    isVerified: true,
-    balance: 200000,
-    password: 'password123',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    email: 'admin@klikjasa.com',
-    name: 'Admin',
-    role: 'admin' as UserRole,
-    isVerified: true,
-    balance: 0,
-    password: 'klikjasa01',
-    createdAt: new Date().toISOString()
-  }
-];
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -58,101 +30,190 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>('user');
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Check for saved user session on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('klikjasa_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setRole(parsedUser.role);
-      } catch (error) {
-        console.error('Failed to parse saved user', error);
-        localStorage.removeItem('klikjasa_user');
+  // Fetch profile data from Supabase
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
       }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
     }
+  };
+
+  // Update user's role in the database
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating role:', error);
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      throw error;
+    }
+  };
+
+  // Initialize auth state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              // Defer fetching profile to avoid potential deadlock
+              setTimeout(async () => {
+                const profileData = await fetchProfile(session.user.id);
+                setProfile(profileData);
+                if (profileData) {
+                  setRole(profileData.role as UserRole);
+                }
+              }, 0);
+            } else {
+              setProfile(null);
+              setRole('user');
+            }
+          }
+        );
+
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
+          if (profileData) {
+            setRole(profileData.role as UserRole);
+          }
+        }
+
+        setLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
-  // Mock login functionality
+  // Login function
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        const foundUser = mockUsers.find(
-          (u) => u.email === email && u.password === password
-        );
-        
-        if (foundUser) {
-          // Remove password before storing in state
-          const { password, ...userWithoutPassword } = foundUser;
-          setUser(userWithoutPassword as User);
-          setRole(foundUser.role);
-          localStorage.setItem('klikjasa_user', JSON.stringify(userWithoutPassword));
-          resolve();
-        } else {
-          reject(new Error('Invalid email or password'));
-        }
-      }, 500);
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
+  // Register function
   const register = async (email: string, password: string, name: string) => {
-    // Simulate API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        // Check if user already exists
-        const existingUser = mockUsers.find((u) => u.email === email);
-        
-        if (existingUser) {
-          reject(new Error('Email already in use'));
-          return;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name
+          }
         }
-        
-        const newUser = {
-          id: `${mockUsers.length + 1}`,
-          email,
-          name,
-          role: 'user' as UserRole,
-          isVerified: false,
-          balance: 0,
-          password,
-          createdAt: new Date().toISOString()
-        };
-        
-        // Adding to mock users array (in a real app, this would be saved to a database)
-        mockUsers.push(newUser);
-        
-        // Remove password before storing in state
-        const { password: _, ...userWithoutPassword } = newUser;
-        setUser(userWithoutPassword as User);
-        setRole('user');
-        localStorage.setItem('klikjasa_user', JSON.stringify(userWithoutPassword));
-        
-        resolve();
-      }, 500);
-    });
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    setRole('user');
-    localStorage.removeItem('klikjasa_user');
+  // Logout function
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw new Error(error.message);
+      }
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      setRole('user');
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   };
 
-  const switchRole = (newRole: UserRole) => {
-    if (!user || (newRole === 'provider' && !user.isVerified)) {
+  // Switch role function
+  const switchRole = async (newRole: UserRole) => {
+    if (!user || (newRole === 'provider' && profile && !profile.is_verified)) {
       return;
     }
     
-    setRole(newRole);
-    
-    // Update local storage with new role
-    if (user) {
-      const updatedUser = { ...user, role: newRole };
-      setUser(updatedUser);
-      localStorage.setItem('klikjasa_user', JSON.stringify(updatedUser));
+    try {
+      await updateUserRole(user.id, newRole);
+      
+      // Update the local state
+      setRole(newRole);
+      setProfile(prev => ({
+        ...prev,
+        role: newRole
+      }));
+      
+      toast({
+        title: 'Role Updated',
+        description: `You are now using KlikJasa as a ${newRole === 'user' ? 'Customer' : 'Service Provider'}`
+      });
+    } catch (error) {
+      console.error('Error switching role:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update role. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -160,8 +221,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        profile,
+        session,
         isAuthenticated: !!user,
         role,
+        loading,
         login,
         register,
         logout,
