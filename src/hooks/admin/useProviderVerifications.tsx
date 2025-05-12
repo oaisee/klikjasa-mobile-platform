@@ -34,7 +34,7 @@ interface UseProviderVerificationsProps {
   searchTerm?: string;
 }
 
-export function useProviderVerifications({ status = 'all', searchTerm = '' }: UseProviderVerificationsProps = {}) {
+export function useProviderVerifications({ status = 'pending', searchTerm = '' }: UseProviderVerificationsProps = {}) {
   const [verifications, setVerifications] = useState<ProviderVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export function useProviderVerifications({ status = 'all', searchTerm = '' }: Us
         throw fetchError;
       }
       
-      console.log("Fetched verification data:", data?.length || 0, "records");
+      console.log("Fetched verification data:", data?.length || 0, "records", data);
       
       // Process the data with filtering by search term
       let filteredData = data || [];
