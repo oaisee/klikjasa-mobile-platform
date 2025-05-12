@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -16,20 +15,12 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Log current authentication state for debugging
-    console.log("AdminRoute - Auth state:", {
-      isAuthenticated,
-      role,
-      loading,
-      userEmail: user?.email
-    });
-    
-    // If authentication is complete and user is not an admin (except admin@klikjasa.com), show error toast
+    // Only show toast if authentication is complete (not loading) and we know the user isn't an admin
     if (!loading && 
         isAuthenticated && 
         role !== 'admin' && 
         user?.email !== 'admin@klikjasa.com') {
-      console.log("Access denied: User is not an admin");
+      
       toast({
         title: "Access Denied",
         description: "You don't have permission to access the admin panel",
@@ -39,8 +30,8 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     }
   }, [loading, isAuthenticated, role, toast, user, navigate]);
 
+  // While loading, show a spinner
   if (loading) {
-    console.log("AdminRoute - Loading state");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 text-klikjasa-purple animate-spin" />
@@ -49,25 +40,22 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    console.log("AdminRoute - Not authenticated, redirecting to admin login");
-    // Redirect to admin login page if not authenticated
-    return <Navigate to="/admin/login" state={{ from: location }} replace />;
-  }
-  
   // Special case for admin@klikjasa.com - always allow access
   if (user?.email === 'admin@klikjasa.com') {
-    console.log("AdminRoute - Admin email detected, allowing access");
     return <>{children}</>;
   }
   
+  // If not authenticated, redirect to login page
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+  
+  // If authenticated but not admin role, this will be handled by the useEffect above
   if (role !== 'admin') {
-    console.log("AdminRoute - Not admin role, redirecting to home");
-    // Redirect to home page if authenticated but not admin
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <></>;  // This is temporary while redirect happens in useEffect
   }
 
-  console.log("AdminRoute - Access granted to admin panel");
+  // Otherwise, render the admin content
   return <>{children}</>;
 };
 

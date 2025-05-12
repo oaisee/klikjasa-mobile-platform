@@ -51,26 +51,36 @@ export const useAuthProvider = () => {
     await register(email, password, name);
   };
 
-  // Wrap the login function to match our type definition
+  // Enhanced login function with better admin handling
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting login with email:", email);
       const data = await login(email, password);
       console.log("Login successful, user:", data.user?.id);
       
-      // Special case for admin@klikjasa.com - set role to admin explicitly
+      // Handle the admin@klikjasa.com special case
       if (email === 'admin@klikjasa.com' && data.user) {
         console.log("Admin login detected, setting role to admin immediately");
-        // Set role locally immediately for faster UI update
+        // Set role in the local state immediately
         setRole('admin');
-        // Update role in database
-        await updateUserRole(data.user.id, 'admin');
         
-        // Update profile in memory
-        setProfile(prev => ({
-          ...prev,
-          role: 'admin'
-        }));
+        // Update role in database with a small delay to ensure proper session establishment
+        setTimeout(async () => {
+          try {
+            // Ensure the database reflects the admin role
+            await updateUserRole(data.user!.id, 'admin');
+            
+            // Update profile in memory
+            setProfile(prev => ({
+              ...prev,
+              role: 'admin'
+            }));
+            
+            console.log("Admin role successfully updated in database");
+          } catch (err) {
+            console.error("Error updating admin role:", err);
+          }
+        }, 500);
       }
       
       return { 

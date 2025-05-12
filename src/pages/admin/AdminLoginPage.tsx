@@ -17,7 +17,7 @@ const AdminLoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Monitor role and authentication state for redirection
+  // Enhanced monitoring for role and authentication with debug logs
   useEffect(() => {
     console.log("AdminLoginPage - Current auth state:", { 
       isAuthenticated, 
@@ -25,10 +25,16 @@ const AdminLoginPage: React.FC = () => {
       userEmail: user?.email 
     });
     
-    // Only redirect if the user is authenticated AND has admin role
-    if (isAuthenticated && role === 'admin') {
-      console.log("AdminLoginPage - Redirecting to admin panel");
-      navigate('/admin');
+    // Redirect if admin is logged in - with slight delay to ensure state is updated
+    if (isAuthenticated) {
+      if (user?.email === 'admin@klikjasa.com' || role === 'admin') {
+        console.log("AdminLoginPage - Admin detected, redirecting to admin panel");
+        
+        // Use a short delay to ensure role state has propagated
+        setTimeout(() => {
+          navigate('/admin');
+        }, 300);
+      }
     }
   }, [isAuthenticated, role, navigate, user]);
   
@@ -67,7 +73,10 @@ const AdminLoginPage: React.FC = () => {
         });
         
         console.log('Successful admin login, user:', user);
-        // The redirection will be handled by the useEffect above
+        // Explicitly navigate to admin panel after short delay
+        setTimeout(() => {
+          navigate('/admin');
+        }, 500);
       } else {
         toast({
           title: 'Error',

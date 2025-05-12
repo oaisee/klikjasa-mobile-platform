@@ -53,9 +53,17 @@ export const register = async (email: string, password: string, name: string) =>
   }
 };
 
-// Logout function
+// Logout function - Improved to handle missing sessions better
 export const logout = async () => {
   try {
+    // Check if we have a valid session before attempting to sign out
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.log('No active session found, clearing local state only');
+      return true; // Return true to indicate successful logout of local state
+    }
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       throw new Error(error.message);
