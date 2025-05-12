@@ -40,7 +40,7 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
     }
   };
 
-  console.log("Rendering verification list with items:", verifications?.length);
+  console.log("Rendering verification list with items:", verifications?.length, verifications);
 
   return (
     <div className="overflow-x-auto">
@@ -58,9 +58,9 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
           {verifications && verifications.length > 0 ? (
             verifications.map((verification) => (
               <TableRow key={verification.id}>
-                <TableCell>{verification.full_name}</TableCell>
-                <TableCell>{verification.whatsapp_number}</TableCell>
-                <TableCell>{new Date(verification.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{verification.full_name || 'Unknown'}</TableCell>
+                <TableCell>{verification.whatsapp_number || 'Not provided'}</TableCell>
+                <TableCell>{verification.created_at ? new Date(verification.created_at).toLocaleDateString() : 'Unknown'}</TableCell>
                 <TableCell>{getStatusBadge(verification.status)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex space-x-2 justify-end">

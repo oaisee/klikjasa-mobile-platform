@@ -32,12 +32,18 @@ const VerificationsPage: React.FC = () => {
     refetch
   } = useProviderVerifications({ status: filter, searchTerm });
 
-  // Effect to load initial data
+  // Effect to load initial data and reset pagination
   useEffect(() => {
-    console.log("VerificationsPage mounted, filter:", filter, "searchTerm:", searchTerm);
+    console.log("VerificationsPage mounted/updated, filter:", filter, "searchTerm:", searchTerm);
     // Reset to page 1 when filter or search changes
     setCurrentPage(1);
   }, [filter, searchTerm]);
+
+  // Force a re-fetch of data when component mounts
+  useEffect(() => {
+    console.log("Initial data fetch on mount");
+    refetch();
+  }, []);
 
   // Calculate pagination
   const totalPages = Math.ceil((verifications?.length || 0) / itemsPerPage);

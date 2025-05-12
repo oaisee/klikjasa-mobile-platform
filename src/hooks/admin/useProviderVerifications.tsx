@@ -85,12 +85,31 @@ export function useProviderVerifications({ status = 'pending', searchTerm = '' }
       }
       
       // Transform JSON address to TypeScript interface
-      const transformedData = filteredData.map(item => ({
-        ...item,
-        address: typeof item.address === 'string' 
-          ? JSON.parse(item.address) as AddressDetails
-          : item.address as unknown as AddressDetails
-      }));
+      const transformedData = filteredData.map(item => {
+        try {
+          const addressData = typeof item.address === 'string' 
+            ? JSON.parse(item.address) 
+            : item.address;
+          
+          return {
+            ...item,
+            address: addressData as AddressDetails
+          };
+        } catch (parseError) {
+          console.error("Error parsing address data for item:", item.id, parseError);
+          // Provide fallback address structure
+          return {
+            ...item,
+            address: {
+              province: "Error parsing address",
+              city: "Error parsing address",
+              district: "Error parsing address",
+              village: "Error parsing address",
+              full_address: "Error parsing address data"
+            } as AddressDetails
+          };
+        }
+      });
       
       setVerifications(transformedData as ProviderVerification[]);
     } catch (err) {
@@ -201,11 +220,25 @@ export function useProviderVerifications({ status = 'pending', searchTerm = '' }
       console.log("Fetched single verification:", data);
       
       // Transform address from JSON to the expected format
+      let transformedAddress;
+      try {
+        transformedAddress = typeof data.address === 'string' 
+          ? JSON.parse(data.address) as AddressDetails
+          : data.address as unknown as AddressDetails;
+      } catch (parseError) {
+        console.error("Error parsing address for verification detail:", parseError);
+        transformedAddress = {
+          province: "Error parsing",
+          city: "Error parsing",
+          district: "Error parsing",
+          village: "Error parsing",
+          full_address: "Error parsing address data"
+        } as AddressDetails;
+      }
+      
       const transformedData = {
         ...data,
-        address: typeof data.address === 'string' 
-          ? JSON.parse(data.address) as AddressDetails
-          : data.address as unknown as AddressDetails
+        address: transformedAddress
       } as ProviderVerification;
       
       return transformedData;
