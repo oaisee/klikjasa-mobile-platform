@@ -32,7 +32,7 @@ export const submitVerificationRequest = async (
         user_id: data.userId,
         full_name: data.fullName,
         whatsapp_number: data.whatsappNumber,
-        address: data.address,
+        address: data.address as any, // Cast to any to resolve type issue with Json
         id_card_url: data.idCardUrl
       });
 
