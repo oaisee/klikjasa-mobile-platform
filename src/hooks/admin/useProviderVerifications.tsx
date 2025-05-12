@@ -87,16 +87,40 @@ export function useProviderVerifications({ status = 'pending', searchTerm = '' }
       // Transform JSON address to TypeScript interface
       const transformedData = filteredData.map(item => {
         try {
-          const addressData = typeof item.address === 'string' 
-            ? JSON.parse(item.address) 
-            : item.address;
+          let addressData;
+          
+          if (!item.address) {
+            addressData = {
+              province: "No data",
+              city: "No data",
+              district: "No data",
+              village: "No data", 
+              full_address: "Address data not available"
+            };
+          } else if (typeof item.address === 'string') {
+            try {
+              addressData = JSON.parse(item.address);
+            } catch (parseError) {
+              console.error("Error parsing address JSON string for item:", item.id, parseError);
+              addressData = {
+                province: "Error parsing",
+                city: "Error parsing",
+                district: "Error parsing",
+                village: "Error parsing",
+                full_address: "Error parsing address data"
+              };
+            }
+          } else {
+            // Address is already an object
+            addressData = item.address as AddressDetails;
+          }
           
           return {
             ...item,
             address: addressData as AddressDetails
           };
         } catch (parseError) {
-          console.error("Error parsing address data for item:", item.id, parseError);
+          console.error("Error processing address data for item:", item.id, parseError);
           // Provide fallback address structure
           return {
             ...item,
@@ -203,6 +227,8 @@ export function useProviderVerifications({ status = 'pending', searchTerm = '' }
       setLoading(true);
       setError(null);
       
+      console.log("Fetching single verification with ID:", id);
+      
       const { data, error: fetchError } = await supabase
         .from('provider_verifications')
         .select(`
@@ -215,16 +241,34 @@ export function useProviderVerifications({ status = 'pending', searchTerm = '' }
         .eq('id', id)
         .single();
         
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error fetching verification:", fetchError);
+        throw fetchError;
+      }
+      
+      if (!data) {
+        console.log("No verification data found for ID:", id);
+        return null;
+      }
       
       console.log("Fetched single verification:", data);
       
       // Transform address from JSON to the expected format
       let transformedAddress;
       try {
-        transformedAddress = typeof data.address === 'string' 
-          ? JSON.parse(data.address) as AddressDetails
-          : data.address as unknown as AddressDetails;
+        if (!data.address) {
+          transformedAddress = {
+            province: "No data",
+            city: "No data",
+            district: "No data",
+            village: "No data",
+            full_address: "Address data not available"
+          };
+        } else if (typeof data.address === 'string') {
+          transformedAddress = JSON.parse(data.address) as AddressDetails;
+        } else {
+          transformedAddress = data.address as unknown as AddressDetails;
+        }
       } catch (parseError) {
         console.error("Error parsing address for verification detail:", parseError);
         transformedAddress = {

@@ -42,6 +42,9 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
 
   console.log("Rendering verification list with items:", verifications?.length, verifications);
 
+  // Ensure verifications is an array before rendering
+  const safeVerifications = Array.isArray(verifications) ? verifications : [];
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -55,8 +58,8 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {verifications && verifications.length > 0 ? (
-            verifications.map((verification) => (
+          {safeVerifications.length > 0 ? (
+            safeVerifications.map((verification) => (
               <TableRow key={verification.id}>
                 <TableCell>{verification.full_name || 'Unknown'}</TableCell>
                 <TableCell>{verification.whatsapp_number || 'Not provided'}</TableCell>
