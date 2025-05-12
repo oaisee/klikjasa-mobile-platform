@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -9,13 +9,20 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 
 const AdminLoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, role, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('admin@klikjasa.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if user is already authenticated as admin and redirect if so
+  useEffect(() => {
+    if (isAuthenticated && role === 'admin') {
+      navigate('/admin');
+    }
+  }, [isAuthenticated, role, navigate]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +56,11 @@ const AdminLoginPage: React.FC = () => {
           title: 'Login Successful',
           description: 'Welcome to KlikJasa Admin Panel',
         });
-        navigate('/admin');
+        
+        // Add a small delay before redirecting to allow auth state to update
+        setTimeout(() => {
+          navigate('/admin');
+        }, 500);
       } else {
         toast({
           title: 'Error',
