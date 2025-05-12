@@ -9,7 +9,7 @@ export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<UserRole>('user');
+  const [role, setRole] = useState<UserRole>('user'); // Always initialize with 'user'
   const [loading, setLoading] = useState<boolean>(true);
 
   // Initialize auth state
@@ -27,7 +27,7 @@ export const useAuthState = () => {
               setTimeout(async () => {
                 const profileData = await fetchProfile(session.user.id);
                 setProfile(profileData);
-                if (profileData) {
+                if (profileData && profileData.role) {
                   setRole(profileData.role as UserRole);
                 }
               }, 0);
@@ -46,7 +46,7 @@ export const useAuthState = () => {
         if (session?.user) {
           const profileData = await fetchProfile(session.user.id);
           setProfile(profileData);
-          if (profileData) {
+          if (profileData && profileData.role) {
             setRole(profileData.role as UserRole);
           }
         }

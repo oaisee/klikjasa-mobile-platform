@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 const TabBar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role = 'user' } = useAuth();
   
   const tabs = [
     {
