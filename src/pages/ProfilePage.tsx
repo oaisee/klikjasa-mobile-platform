@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User as UserIcon, 
@@ -10,9 +10,11 @@ import {
   Shield, 
   ChevronRight,
   HelpCircle,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -25,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const ProfilePage = () => {
   const { user, profile, isAuthenticated, logout, role, switchRole, loading } = useAuth();
@@ -32,6 +35,8 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(true);
 
   // Redirect to auth page if not authenticated
   React.useEffect(() => {
@@ -39,6 +44,35 @@ const ProfilePage = () => {
       navigate('/auth');
     }
   }, [isAuthenticated, loading, navigate]);
+
+  // Check if the user has a pending verification request
+  useEffect(() => {
+    const checkPendingVerification = async () => {
+      if (!user) return;
+      
+      try {
+        setVerificationLoading(true);
+        const { data, error } = await supabase
+          .from('provider_verifications')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('status', 'pending')
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Error checking verification status:', error);
+        } else {
+          setPendingVerification(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking verification status:', error);
+      } finally {
+        setVerificationLoading(false);
+      }
+    };
+    
+    checkPendingVerification();
+  }, [user]);
 
   if (loading) {
     return (
@@ -114,7 +148,7 @@ const ProfilePage = () => {
           <div className="ml-4">
             <h2 className="font-semibold text-lg">{profile.name}</h2>
             <p className="text-gray-600 text-sm">{profile.email}</p>
-            <div className="flex items-center mt-1">
+            <div className="flex items-center mt-1 flex-wrap gap-1">
               <span className={`text-xs px-2 py-1 rounded-full ${
                 role === 'user' ? 'bg-klikjasa-cream text-klikjasa-deepPurple' : 
                 role === 'provider' ? 'bg-klikjasa-purple text-white' :
@@ -123,10 +157,16 @@ const ProfilePage = () => {
                 {role === 'user' ? 'Customer' : role === 'provider' ? 'Service Provider' : 'Admin'}
               </span>
               {profile.is_verified && (
-                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 flex items-center">
+                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 flex items-center">
                   <Shield className="h-3 w-3 mr-1" />
                   Verified
                 </span>
+              )}
+              {pendingVerification && !profile.is_verified && (
+                <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Verification Pending
+                </Badge>
               )}
             </div>
           </div>
@@ -180,7 +220,7 @@ const ProfilePage = () => {
         )}
         
         {/* Provider Verification Option */}
-        {!profile.is_verified && role === 'user' && (
+        {!profile.is_verified && role === 'user' && !pendingVerification && (
           <>
             <button 
               className="w-full flex justify-between items-center py-3"
@@ -192,6 +232,20 @@ const ProfilePage = () => {
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </button>
+            <Separator />
+          </>
+        )}
+        
+        {/* Pending Verification Status */}
+        {!profile.is_verified && pendingVerification && (
+          <>
+            <div className="w-full flex justify-between items-center py-3">
+              <div className="flex items-center">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <span className="ml-3">Verification Status</span>
+              </div>
+              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>
+            </div>
             <Separator />
           </>
         )}
