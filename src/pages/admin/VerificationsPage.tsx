@@ -17,7 +17,7 @@ import LoadingState from '@/components/admin/verifications/LoadingState';
 import ErrorState from '@/components/admin/verifications/ErrorState';
 
 const VerificationsPage: React.FC = () => {
-  const [filter, setFilter] = useState<VerificationStatus | 'all'>('all');
+  const [filter, setFilter] = useState<VerificationStatus | 'all'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -61,8 +61,6 @@ const VerificationsPage: React.FC = () => {
         title: 'Verification Approved',
         description: `${name}'s verification request has been approved successfully.`,
       });
-      // Force refresh data
-      refetch();
     }
   };
 
@@ -74,8 +72,6 @@ const VerificationsPage: React.FC = () => {
         title: 'Verification Rejected',
         description: `${name}'s verification request has been rejected.`,
       });
-      // Force refresh data
-      refetch();
     }
   };
 

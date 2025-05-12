@@ -40,7 +40,7 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
     }
   };
 
-  console.log("Rendering verification list with items:", verifications.length);
+  console.log("Rendering verification list with items:", verifications?.length);
 
   return (
     <div className="overflow-x-auto">
@@ -55,7 +55,7 @@ const VerificationsList: React.FC<VerificationsListProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {verifications.length > 0 ? (
+          {verifications && verifications.length > 0 ? (
             verifications.map((verification) => (
               <TableRow key={verification.id}>
                 <TableCell>{verification.full_name}</TableCell>

@@ -46,7 +46,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
       }
       
       // If not authenticated at all, redirect to main auth page
-      if (!isAuthenticated) {
+      if (!isAuthenticated && !loading) {
         console.log("Not authenticated, redirecting to auth page");
         navigate('/auth', { replace: true, state: { from: location } });
       }

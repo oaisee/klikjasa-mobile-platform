@@ -71,7 +71,7 @@ export function useProviderVerifications({ status = 'all', searchTerm = '' }: Us
         throw fetchError;
       }
       
-      console.log("Fetched verification data:", data);
+      console.log("Fetched verification data:", data?.length || 0, "records");
       
       // Process the data with filtering by search term
       let filteredData = data || [];
@@ -87,7 +87,9 @@ export function useProviderVerifications({ status = 'all', searchTerm = '' }: Us
       // Transform JSON address to TypeScript interface
       const transformedData = filteredData.map(item => ({
         ...item,
-        address: item.address as unknown as AddressDetails
+        address: typeof item.address === 'string' 
+          ? JSON.parse(item.address) as AddressDetails
+          : item.address as unknown as AddressDetails
       }));
       
       setVerifications(transformedData as ProviderVerification[]);
@@ -201,7 +203,9 @@ export function useProviderVerifications({ status = 'all', searchTerm = '' }: Us
       // Transform address from JSON to the expected format
       const transformedData = {
         ...data,
-        address: data.address as unknown as AddressDetails
+        address: typeof data.address === 'string' 
+          ? JSON.parse(data.address) as AddressDetails
+          : data.address as unknown as AddressDetails
       } as ProviderVerification;
       
       return transformedData;
