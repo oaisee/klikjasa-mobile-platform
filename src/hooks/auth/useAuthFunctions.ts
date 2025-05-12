@@ -14,7 +14,10 @@ export const login = async (email: string, password: string) => {
       throw new Error(error.message);
     }
 
-    return data;
+    return {
+      user: data.user,
+      session: data.session
+    };
   } catch (error) {
     console.error('Login error:', error);
     throw error;

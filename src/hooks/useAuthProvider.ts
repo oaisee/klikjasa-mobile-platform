@@ -48,21 +48,18 @@ export const useAuthProvider = () => {
 
   // Handle registration with profile creation
   const handleRegister = async (email: string, password: string, name: string) => {
-    const data = await register(email, password, name);
+    await register(email, password, name);
     
-    // Set local state if session exists
-    if (data.session) {
-      // Profile might not be available immediately due to trigger timing
-      setTimeout(async () => {
-        if (data.user) {
-          const profileData = await fetchProfile(data.user.id);
-          if (profileData) {
-            setProfile(profileData);
-            setRole(profileData.role as UserRole);
-          }
-        }
-      }, 1000); // Give the trigger time to create the profile
-    }
+    // We don't need to return anything as our type now expects void
+  };
+
+  // Wrap the login function to match our type definition
+  const handleLogin = async (email: string, password: string) => {
+    const data = await login(email, password);
+    return { 
+      user: data.user, 
+      session: data.session 
+    };
   };
 
   return {
@@ -72,7 +69,7 @@ export const useAuthProvider = () => {
     isAuthenticated: !!user,
     role,
     loading,
-    login,
+    login: handleLogin,
     register: handleRegister,
     logout,
     switchRole
