@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// KlikJasa color palette
+				klikjasa: {
+					cream: '#FFF7D1',
+					purple: '#8B5DFF', 
+					deepPurple: '#6A42C2',
+					darkBlue: '#563A9C'
 				}
 			},
 			borderRadius: {
