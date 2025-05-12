@@ -19,16 +19,34 @@ export const useAuthState = () => {
         // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
+            console.log("Auth state changed:", event, "User:", session?.user?.email);
             setSession(session);
             setUser(session?.user ?? null);
             
             if (session?.user) {
+              // Special handling for admin user
+              if (session.user.email === 'admin@klikjasa.com') {
+                console.log("Setting role to admin for admin@klikjasa.com");
+                setRole('admin');
+              }
+              
               // Defer fetching profile to avoid potential deadlock
               setTimeout(async () => {
-                const profileData = await fetchProfile(session.user.id);
-                setProfile(profileData);
-                if (profileData && profileData.role) {
-                  setRole(profileData.role as UserRole);
+                try {
+                  const profileData = await fetchProfile(session.user.id);
+                  console.log("Fetched profile data:", profileData);
+                  setProfile(profileData);
+                  
+                  if (profileData && profileData.role) {
+                    console.log("Setting role from profile:", profileData.role);
+                    setRole(profileData.role as UserRole);
+                  } else if (session.user.email === 'admin@klikjasa.com') {
+                    // Ensure admin user always has admin role
+                    console.log("Ensuring admin role for admin@klikjasa.com");
+                    setRole('admin');
+                  }
+                } catch (err) {
+                  console.error("Error fetching profile:", err);
                 }
               }, 0);
             } else {
@@ -40,14 +58,28 @@ export const useAuthState = () => {
 
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Special handling for admin user
+          if (session.user.email === 'admin@klikjasa.com') {
+            console.log("Setting initial role to admin for admin@klikjasa.com");
+            setRole('admin');
+          }
+          
           const profileData = await fetchProfile(session.user.id);
+          console.log("Initial profile data:", profileData);
           setProfile(profileData);
+          
           if (profileData && profileData.role) {
+            console.log("Setting initial role from profile:", profileData.role);
             setRole(profileData.role as UserRole);
+          } else if (session.user.email === 'admin@klikjasa.com') {
+            // Ensure admin user always has admin role
+            console.log("Ensuring initial admin role for admin@klikjasa.com");
+            setRole('admin');
           }
         }
 

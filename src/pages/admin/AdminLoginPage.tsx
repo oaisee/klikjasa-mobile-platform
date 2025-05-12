@@ -59,8 +59,9 @@ const AdminLoginPage: React.FC = () => {
         
         // Add a small delay before redirecting to allow auth state to update
         setTimeout(() => {
+          console.log('Navigating to admin panel after successful login');
           navigate('/admin');
-        }, 500);
+        }, 1000); // Increased delay to ensure auth state updates
       } else {
         toast({
           title: 'Error',

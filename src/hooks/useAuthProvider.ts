@@ -12,7 +12,7 @@ export const useAuthProvider = () => {
     session, 
     setProfile, 
     setRole, 
-    role,  // Make sure we extract 'role' from useAuthState
+    role,
     loading 
   } = useAuthState();
 
@@ -34,7 +34,7 @@ export const useAuthProvider = () => {
       
       toast({
         title: 'Role Updated',
-        description: `You are now using KlikJasa as a ${newRole === 'user' ? 'Customer' : 'Service Provider'}`
+        description: `You are now using KlikJasa as a ${newRole === 'user' ? 'Customer' : newRole === 'provider' ? 'Service Provider' : 'Admin'}`
       });
     } catch (error) {
       console.error('Error switching role:', error);
@@ -49,17 +49,31 @@ export const useAuthProvider = () => {
   // Handle registration with profile creation
   const handleRegister = async (email: string, password: string, name: string) => {
     await register(email, password, name);
-    
-    // We don't need to return anything as our type now expects void
   };
 
   // Wrap the login function to match our type definition
   const handleLogin = async (email: string, password: string) => {
-    const data = await login(email, password);
-    return { 
-      user: data.user, 
-      session: data.session 
-    };
+    try {
+      console.log("Attempting login with email:", email);
+      const data = await login(email, password);
+      console.log("Login successful, user:", data.user?.id);
+      
+      // Special case for admin@klikjasa.com - set role to admin explicitly
+      if (email === 'admin@klikjasa.com' && data.user) {
+        console.log("Admin login detected, setting role to admin");
+        // Update role in database and local state
+        await updateUserRole(data.user.id, 'admin');
+        setRole('admin');
+      }
+      
+      return { 
+        user: data.user, 
+        session: data.session 
+      };
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
   return {
@@ -67,7 +81,7 @@ export const useAuthProvider = () => {
     profile,
     session,
     isAuthenticated: !!user,
-    role, // This was missing or not properly extracted
+    role,
     loading,
     login: handleLogin,
     register: handleRegister,

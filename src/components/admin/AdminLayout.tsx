@@ -19,9 +19,16 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const navigate = useNavigate();
-  const location = useLocation(); // Add this line to get current location
-  const { logout } = useAuth();
+  const location = useLocation();
+  const { logout, role, user } = useAuth();
   const { toast } = useToast();
+
+  // Log current state for debugging
+  console.log("AdminLayout - Current state:", {
+    role,
+    userEmail: user?.email,
+    currentPath: location.pathname
+  });
 
   const handleLogout = async () => {
     try {
