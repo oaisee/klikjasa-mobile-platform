@@ -56,6 +56,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Create a user profile manually (as a fallback)
+  const createUserProfile = async (userId: string, name: string, email: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          name: name,
+          email: email,
+          role: 'user',
+          is_verified: false,
+          balance: 0
+        });
+
+      if (error) {
+        console.error('Error creating profile manually:', error);
+        throw new Error(error.message);
+      }
+      
+      // Fetch the newly created profile
+      return await fetchProfile(userId);
+    } catch (error) {
+      console.error('Error creating profile manually:', error);
+      throw error;
+    }
+  };
+
   // Update user's role in the database
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
@@ -146,9 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Register function
+  // Register function with improved error handling and manual profile creation
   const register = async (email: string, password: string, name: string) => {
     try {
+      // Step 1: Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -161,6 +189,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         throw new Error(error.message);
+      }
+
+      if (!data.user) {
+        throw new Error('User creation failed');
+      }
+
+      // Step 2: Check if profile was automatically created (wait a moment)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let profileData = await fetchProfile(data.user.id);
+      
+      // Step 3: If profile wasn't created automatically, create it manually
+      if (!profileData) {
+        try {
+          profileData = await createUserProfile(data.user.id, name, email);
+          console.log('Profile created manually:', profileData);
+        } catch (profileError) {
+          console.error('Failed to create profile manually:', profileError);
+          // Continue anyway, as the user account was created successfully
+        }
+      }
+      
+      // Set local state
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+        
+        if (profileData) {
+          setProfile(profileData);
+          setRole(profileData.role as UserRole);
+        }
       }
 
       return;

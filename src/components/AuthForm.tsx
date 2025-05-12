@@ -8,12 +8,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
 import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -30,6 +33,7 @@ const AuthForm = () => {
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
 
     try {
       await login(loginForm.email, loginForm.password);
@@ -39,6 +43,7 @@ const AuthForm = () => {
       });
       navigate('/');
     } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.');
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to login',
@@ -52,8 +57,10 @@ const AuthForm = () => {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
 
     if (registerForm.password !== registerForm.confirmPassword) {
+      setAuthError('Passwords do not match');
       toast({
         title: 'Error',
         description: 'Passwords do not match',
@@ -71,9 +78,14 @@ const AuthForm = () => {
       });
       navigate('/');
     } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to register. Please try again later.';
+      
+      setAuthError(errorMessage);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to register',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -90,6 +102,12 @@ const AuthForm = () => {
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
+          
+          {authError && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
           
           <TabsContent value="login">
             <div className="space-y-6 p-6 bg-white rounded-lg shadow-md">
@@ -122,7 +140,12 @@ const AuthForm = () => {
                   className="w-full klikjasa-gradient"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Logging in...' : 'Login'}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : 'Login'}
                 </Button>
               </form>
             </div>
@@ -180,7 +203,12 @@ const AuthForm = () => {
                   className="w-full klikjasa-gradient"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Creating Account...' : 'Register'}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : 'Register'}
                 </Button>
               </form>
             </div>
