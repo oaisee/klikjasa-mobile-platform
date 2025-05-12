@@ -9,7 +9,7 @@ export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<UserRole>('user'); // Always initialize with 'user'
+  const [role, setRole] = useState<UserRole>('user');
   const [loading, setLoading] = useState<boolean>(true);
 
   // Initialize auth state
@@ -24,26 +24,27 @@ export const useAuthState = () => {
             setUser(session?.user ?? null);
             
             if (session?.user) {
-              // Special handling for admin user
+              // Special handling for admin user - IMMEDIATELY set role to admin
               if (session.user.email === 'admin@klikjasa.com') {
                 console.log("Setting role to admin for admin@klikjasa.com");
                 setRole('admin');
               }
               
-              // Defer fetching profile to avoid potential deadlock
+              // Defer profile fetching to avoid potential deadlock
               setTimeout(async () => {
                 try {
                   const profileData = await fetchProfile(session.user.id);
                   console.log("Fetched profile data:", profileData);
                   setProfile(profileData);
                   
-                  if (profileData && profileData.role) {
-                    console.log("Setting role from profile:", profileData.role);
-                    setRole(profileData.role as UserRole);
-                  } else if (session.user.email === 'admin@klikjasa.com') {
+                  if (session.user.email === 'admin@klikjasa.com') {
                     // Ensure admin user always has admin role
+                    await updateAdminRoleIfNeeded(session.user.id, profileData);
                     console.log("Ensuring admin role for admin@klikjasa.com");
                     setRole('admin');
+                  } else if (profileData && profileData.role) {
+                    console.log("Setting role from profile:", profileData.role);
+                    setRole(profileData.role as UserRole);
                   }
                 } catch (err) {
                   console.error("Error fetching profile:", err);
@@ -63,7 +64,7 @@ export const useAuthState = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Special handling for admin user
+          // Special handling for admin user - IMMEDIATELY set role to admin
           if (session.user.email === 'admin@klikjasa.com') {
             console.log("Setting initial role to admin for admin@klikjasa.com");
             setRole('admin');
@@ -73,13 +74,14 @@ export const useAuthState = () => {
           console.log("Initial profile data:", profileData);
           setProfile(profileData);
           
-          if (profileData && profileData.role) {
-            console.log("Setting initial role from profile:", profileData.role);
-            setRole(profileData.role as UserRole);
-          } else if (session.user.email === 'admin@klikjasa.com') {
+          if (session.user.email === 'admin@klikjasa.com') {
             // Ensure admin user always has admin role
+            await updateAdminRoleIfNeeded(session.user.id, profileData);
             console.log("Ensuring initial admin role for admin@klikjasa.com");
             setRole('admin');
+          } else if (profileData && profileData.role) {
+            console.log("Setting initial role from profile:", profileData.role);
+            setRole(profileData.role as UserRole);
           }
         }
 
@@ -96,6 +98,25 @@ export const useAuthState = () => {
 
     initializeAuth();
   }, []);
+  
+  // Helper function to update admin role if needed
+  const updateAdminRoleIfNeeded = async (userId: string, profileData: any) => {
+    if (!profileData || profileData.role !== 'admin') {
+      console.log("Updating admin role in database");
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', userId);
+          
+        if (error) {
+          console.error("Error updating admin role:", error);
+        }
+      } catch (err) {
+        console.error("Error in role update transaction:", err);
+      }
+    }
+  };
 
   return {
     user,

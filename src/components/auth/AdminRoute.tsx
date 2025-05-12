@@ -24,16 +24,20 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
       userEmail: user?.email
     });
     
-    // If authentication is complete and user is not an admin, show an error toast
-    if (!loading && isAuthenticated && role !== 'admin') {
+    // If authentication is complete and user is not an admin (except admin@klikjasa.com), show error toast
+    if (!loading && 
+        isAuthenticated && 
+        role !== 'admin' && 
+        user?.email !== 'admin@klikjasa.com') {
       console.log("Access denied: User is not an admin");
       toast({
         title: "Access Denied",
         description: "You don't have permission to access the admin panel",
         variant: "destructive",
       });
+      navigate('/');
     }
-  }, [loading, isAuthenticated, role, toast, user]);
+  }, [loading, isAuthenticated, role, toast, user, navigate]);
 
   if (loading) {
     console.log("AdminRoute - Loading state");

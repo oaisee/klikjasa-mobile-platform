@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 
 const AdminLoginPage: React.FC = () => {
-  const { login, role, isAuthenticated } = useAuth();
+  const { login, role, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -17,12 +17,20 @@ const AdminLoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Check if user is already authenticated as admin and redirect if so
+  // Monitor role and authentication state for redirection
   useEffect(() => {
+    console.log("AdminLoginPage - Current auth state:", { 
+      isAuthenticated, 
+      role, 
+      userEmail: user?.email 
+    });
+    
+    // Only redirect if the user is authenticated AND has admin role
     if (isAuthenticated && role === 'admin') {
+      console.log("AdminLoginPage - Redirecting to admin panel");
       navigate('/admin');
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, navigate, user]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +57,7 @@ const AdminLoginPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      console.log('Attempting admin login with email:', email);
       const { user } = await login(email, password);
       
       if (user) {
@@ -57,11 +66,8 @@ const AdminLoginPage: React.FC = () => {
           description: 'Welcome to KlikJasa Admin Panel',
         });
         
-        // Add a small delay before redirecting to allow auth state to update
-        setTimeout(() => {
-          console.log('Navigating to admin panel after successful login');
-          navigate('/admin');
-        }, 1000); // Increased delay to ensure auth state updates
+        console.log('Successful admin login, user:', user);
+        // The redirection will be handled by the useEffect above
       } else {
         toast({
           title: 'Error',

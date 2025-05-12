@@ -60,10 +60,17 @@ export const useAuthProvider = () => {
       
       // Special case for admin@klikjasa.com - set role to admin explicitly
       if (email === 'admin@klikjasa.com' && data.user) {
-        console.log("Admin login detected, setting role to admin");
-        // Update role in database and local state
-        await updateUserRole(data.user.id, 'admin');
+        console.log("Admin login detected, setting role to admin immediately");
+        // Set role locally immediately for faster UI update
         setRole('admin');
+        // Update role in database
+        await updateUserRole(data.user.id, 'admin');
+        
+        // Update profile in memory
+        setProfile(prev => ({
+          ...prev,
+          role: 'admin'
+        }));
       }
       
       return { 
