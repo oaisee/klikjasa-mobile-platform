@@ -146,10 +146,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Register function - modified to avoid manual profile creation which causes errors
+  // Register function - modified to rely on database trigger for profile creation
   const register = async (email: string, password: string, name: string) => {
     try {
-      // Step 1: Sign up the user with metadata for trigger
+      // Step 1: Sign up the user with metadata for the database trigger
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
