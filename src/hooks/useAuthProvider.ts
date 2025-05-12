@@ -11,7 +11,6 @@ export const useAuthProvider = () => {
     profile, 
     session, 
     setProfile, 
-    role, 
     setRole, 
     loading 
   } = useAuthState();
