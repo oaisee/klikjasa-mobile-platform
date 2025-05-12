@@ -1,34 +1,15 @@
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import Logo from './Logo';
-import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import LoginForm from './auth/LoginForm';
+import RegisterForm from './auth/RegisterForm';
 
 const AuthForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const { login, register, role, user } = useAuth();
+  const { role, user } = useAuth();
   const navigate = useNavigate();
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: ''
-  });
-
-  const [registerForm, setRegisterForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
 
   // Check if user is already logged in and redirect accordingly
   useEffect(() => {
@@ -44,87 +25,6 @@ const AuthForm = () => {
     }
   }, [user, role, navigate]);
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setAuthError(null);
-
-    try {
-      console.log(`Submitting login form for: ${loginForm.email}`);
-      const result = await login(loginForm.email, loginForm.password);
-      
-      toast({
-        title: 'Success',
-        description: 'You have successfully logged in!'
-      });
-      
-      // Special handling for admin login
-      if (loginForm.email === 'admin@klikjasa.com') {
-        console.log('Admin login successful, redirecting to admin panel');
-        // Add delay to ensure state is updated
-        setTimeout(() => {
-          navigate('/admin');
-        }, 1000);
-      } else {
-        console.log('Regular user login successful, redirecting to home page');
-        navigate('/');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.';
-      console.error('Login error in form:', errorMessage);
-      setAuthError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setAuthError(null);
-
-    if (registerForm.password !== registerForm.confirmPassword) {
-      setAuthError('Passwords do not match');
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        variant: 'destructive'
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      console.log(`Submitting registration form for: ${registerForm.email}`);
-      await register(registerForm.email, registerForm.password, registerForm.name);
-      toast({
-        title: 'Success',
-        description: 'Account created successfully!'
-      });
-      console.log('Registration successful, redirecting to home page');
-      navigate('/');
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to register. Please try again later.';
-      
-      console.error('Registration error in form:', errorMessage);
-      setAuthError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4">
       <Logo className="mb-8" />
@@ -135,115 +35,12 @@ const AuthForm = () => {
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
           
-          {authError && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{authError}</AlertDescription>
-            </Alert>
-          )}
-          
           <TabsContent value="login">
-            <div className="space-y-6 p-6 bg-white rounded-lg shadow-md">
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    placeholder="name@example.com"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full klikjasa-gradient"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Logging in...
-                    </>
-                  ) : 'Login'}
-                </Button>
-              </form>
-            </div>
+            <LoginForm />
           </TabsContent>
           
           <TabsContent value="register">
-            <div className="space-y-6 p-6 bg-white rounded-lg shadow-md">
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="John Doe"
-                    required
-                    value={registerForm.name}
-                    onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
-                  <Input
-                    id="register-email"
-                    placeholder="name@example.com"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={registerForm.email}
-                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Password</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full klikjasa-gradient"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Account...
-                    </>
-                  ) : 'Register'}
-                </Button>
-              </form>
-            </div>
+            <RegisterForm />
           </TabsContent>
         </Tabs>
       </div>
