@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Activity, CreditCard, BarChart2 } from 'lucide-react';
+import { Users, Activity, CreditCard, BarChart2, UserCheck, AlertTriangle } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const AdminDashboardPage: React.FC = () => {
       title: 'Active Providers', 
       value: '312', 
       change: '+5% from last month', 
-      icon: Activity, 
+      icon: UserCheck, 
       color: 'text-green-500 bg-green-100' 
     },
     { 
@@ -35,16 +37,56 @@ const AdminDashboardPage: React.FC = () => {
       title: 'Pending Verifications', 
       value: '24', 
       change: '-3% from last month', 
-      icon: BarChart2, 
+      icon: AlertTriangle, 
       color: 'text-yellow-500 bg-yellow-100' 
     }
   ];
+
+  const recentVerifications = [
+    { id: 1, provider: 'Ahmad Supri', status: 'pending', date: '2025-05-12' },
+    { id: 2, provider: 'Budi Santoso', status: 'pending', date: '2025-05-11' },
+    { id: 3, provider: 'Citra Dewi', status: 'approved', date: '2025-05-10' },
+    { id: 4, provider: 'Dewi Anggraini', status: 'rejected', date: '2025-05-09' },
+    { id: 5, provider: 'Eko Prasetyo', status: 'pending', date: '2025-05-08' },
+  ];
+
+  const recentTransactions = [
+    { id: 1, amount: 50000, type: 'top_up', date: '2025-05-12' },
+    { id: 2, amount: 100000, type: 'service_fee', date: '2025-05-11' },
+    { id: 3, amount: 75000, type: 'top_up', date: '2025-05-10' },
+    { id: 4, amount: 150000, type: 'service_fee', date: '2025-05-09' },
+    { id: 5, amount: 200000, type: 'top_up', date: '2025-05-08' },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getTransactionTypeBadge = (type: string) => {
+    switch (type) {
+      case 'top_up':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">Top Up</Badge>;
+      case 'service_fee':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Service Fee</Badge>;
+      default:
+        return <Badge>{type}</Badge>;
+    }
+  };
 
   return (
     <AdminLayout title="Dashboard">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="overflow-hidden">
+          <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -64,85 +106,89 @@ const AdminDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2">
         <Card className="overflow-hidden">
           <CardContent className="p-6">
-            <h3 className="text-lg font-medium mb-4">Recent Verifications</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Recent Verifications</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/admin/verifications')}
+                className="text-klikjasa-purple hover:bg-klikjasa-cream"
+              >
+                View All
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left border-b">
-                    <th className="pb-2 font-medium">Provider</th>
-                    <th className="pb-2 font-medium">Status</th>
-                    <th className="pb-2 font-medium">Date</th>
-                    <th className="pb-2 font-medium">Action</th>
+                    <th className="pb-3 font-medium">Provider</th>
+                    <th className="pb-3 font-medium">Status</th>
+                    <th className="pb-3 font-medium">Date</th>
+                    <th className="pb-3 font-medium">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[1, 2, 3, 4, 5].map((item) => (
-                    <tr key={item} className="border-b last:border-0">
-                      <td className="py-3">Provider {item}</td>
+                  {recentVerifications.map((item) => (
+                    <tr key={item.id} className="border-b last:border-0">
+                      <td className="py-3">{item.provider}</td>
                       <td className="py-3">
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
+                        {getStatusBadge(item.status)}
                       </td>
-                      <td className="py-3 text-gray-500">23 May 2025</td>
+                      <td className="py-3 text-gray-500">{item.date}</td>
                       <td className="py-3">
-                        <button 
-                          onClick={() => navigate(`/admin/verifications/${item}`)}
-                          className="text-klikjasa-purple hover:underline"
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/admin/verifications/${item.id}`)}
+                          className="text-klikjasa-purple hover:bg-klikjasa-cream h-8 px-2"
                         >
                           Review
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <button 
-                onClick={() => navigate('/admin/verifications')}
-                className="w-full text-center text-klikjasa-purple hover:underline mt-4 text-sm"
-              >
-                View All Verifications
-              </button>
             </div>
           </CardContent>
         </Card>
 
         <Card className="overflow-hidden">
           <CardContent className="p-6">
-            <h3 className="text-lg font-medium mb-4">Recent Transactions</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Recent Transactions</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/admin/transactions')}
+                className="text-klikjasa-purple hover:bg-klikjasa-cream"
+              >
+                View All
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left border-b">
-                    <th className="pb-2 font-medium">ID</th>
-                    <th className="pb-2 font-medium">Amount</th>
-                    <th className="pb-2 font-medium">Type</th>
-                    <th className="pb-2 font-medium">Date</th>
+                    <th className="pb-3 font-medium">ID</th>
+                    <th className="pb-3 font-medium">Amount</th>
+                    <th className="pb-3 font-medium">Type</th>
+                    <th className="pb-3 font-medium">Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[1, 2, 3, 4, 5].map((item) => (
-                    <tr key={item} className="border-b last:border-0">
-                      <td className="py-3">#TRX-{item.toString().padStart(5, '0')}</td>
-                      <td className="py-3">Rp {(item * 50000).toLocaleString()}</td>
+                  {recentTransactions.map((item) => (
+                    <tr key={item.id} className="border-b last:border-0">
+                      <td className="py-3">#TRX-{item.id.toString().padStart(5, '0')}</td>
+                      <td className="py-3">Rp {item.amount.toLocaleString()}</td>
                       <td className="py-3">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          item % 2 === 0 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {item % 2 === 0 ? 'Service Fee' : 'Top Up'}
-                        </span>
+                        {getTransactionTypeBadge(item.type)}
                       </td>
-                      <td className="py-3 text-gray-500">23 May 2025</td>
+                      <td className="py-3 text-gray-500">{item.date}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <button 
-                onClick={() => navigate('/admin/transactions')}
-                className="w-full text-center text-klikjasa-purple hover:underline mt-4 text-sm"
-              >
-                View All Transactions
-              </button>
             </div>
           </CardContent>
         </Card>

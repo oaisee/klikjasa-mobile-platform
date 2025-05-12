@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -7,10 +7,13 @@ import {
   ShieldCheck, 
   FileText, 
   Settings, 
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -22,12 +25,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const location = useLocation();
   const { logout, role, user } = useAuth();
   const { toast } = useToast();
-
-  console.log("AdminLayout - Current state:", {
-    role,
-    userEmail: user?.email,
-    currentPath: location.pathname
-  });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -69,8 +67,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-md">
+      {/* Mobile Sidebar Toggle */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="rounded-full bg-white shadow-md"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+        </Button>
+      </div>
+
+      {/* Sidebar - Responsive */}
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transform transition-transform duration-200 ease-in-out lg:translate-x-0 fixed lg:static z-40 h-full w-64 bg-white shadow-md`}>
         <div className="p-4 border-b">
           <h1 className="text-xl font-bold text-klikjasa-purple">KlikJasa Admin</h1>
           {user?.email && (
@@ -84,7 +94,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             {navItems.map((item) => (
               <li key={item.path}>
                 <button 
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    if (window.innerWidth < 1024) {
+                      setSidebarOpen(false);
+                    }
+                  }}
                   className={`flex items-center w-full px-6 py-3 text-gray-600 hover:bg-gray-100 hover:text-klikjasa-purple ${
                     location.pathname === item.path ? 'bg-klikjasa-cream text-klikjasa-purple font-medium' : ''
                   }`}
@@ -118,6 +133,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           {children}
         </main>
       </div>
+      
+      {/* Overlay for mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };

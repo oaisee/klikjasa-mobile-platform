@@ -1,17 +1,21 @@
 
 import React, { useState } from 'react';
-import { Check, X, Eye } from 'lucide-react';
+import { Check, X, Eye, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 const VerificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<{[key: string]: boolean}>({});
   
   // Mock data - would be fetched from the API
   const verifications = [
@@ -20,6 +24,9 @@ const VerificationsPage: React.FC = () => {
     { id: 3, providerName: 'Citra Dewi', phoneNumber: '0857-1234-5678', submittedDate: '2025-05-03', status: 'pending' },
     { id: 4, providerName: 'Dewi Anggraini', phoneNumber: '0878-9876-5432', submittedDate: '2025-05-04', status: 'approved' },
     { id: 5, providerName: 'Eko Prasetyo', phoneNumber: '0819-8765-4321', submittedDate: '2025-05-05', status: 'rejected' },
+    { id: 6, providerName: 'Fajar Rahman', phoneNumber: '0821-1234-5678', submittedDate: '2025-05-06', status: 'pending' },
+    { id: 7, providerName: 'Gita Putri', phoneNumber: '0822-2345-6789', submittedDate: '2025-05-07', status: 'approved' },
+    { id: 8, providerName: 'Hadi Purnomo', phoneNumber: '0823-3456-7890', submittedDate: '2025-05-08', status: 'rejected' },
   ];
 
   const filteredVerifications = verifications
@@ -28,6 +35,50 @@ const VerificationsPage: React.FC = () => {
       v.providerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
       v.phoneNumber.includes(searchTerm)
     );
+
+  const handleQuickApprove = async (id: number, name: string) => {
+    setLoading(prev => ({ ...prev, [`approve-${id}`]: true }));
+    
+    // Simulate API call
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: 'Verification Approved',
+        description: `${name}'s verification request has been approved successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to approve verification request. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, [`approve-${id}`]: false }));
+    }
+  };
+
+  const handleQuickReject = async (id: number, name: string) => {
+    setLoading(prev => ({ ...prev, [`reject-${id}`]: true }));
+    
+    // Simulate API call
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: 'Verification Rejected',
+        description: `${name}'s verification request has been rejected.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to reject verification request. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, [`reject-${id}`]: false }));
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -44,14 +95,20 @@ const VerificationsPage: React.FC = () => {
 
   return (
     <AdminLayout title="Provider Verifications">
-      <Card>
+      <Card className="mb-6">
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row justify-between mb-6 gap-4">
-            <div className="flex space-x-2">
+          <div className="text-sm text-gray-500 mb-6">
+            <p>Review and manage provider verification requests. Approve or reject applications after reviewing their credentials and identification documents.</p>
+          </div>
+          <Separator className="mb-6" />
+          
+          <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant={filter === 'pending' ? 'default' : 'outline'} 
                 onClick={() => setFilter('pending')}
                 className={filter === 'pending' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
+                size="sm"
               >
                 Pending
               </Button>
@@ -59,6 +116,7 @@ const VerificationsPage: React.FC = () => {
                 variant={filter === 'approved' ? 'default' : 'outline'} 
                 onClick={() => setFilter('approved')}
                 className={filter === 'approved' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
+                size="sm"
               >
                 Approved
               </Button>
@@ -66,6 +124,7 @@ const VerificationsPage: React.FC = () => {
                 variant={filter === 'rejected' ? 'default' : 'outline'} 
                 onClick={() => setFilter('rejected')}
                 className={filter === 'rejected' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
+                size="sm"
               >
                 Rejected
               </Button>
@@ -73,16 +132,18 @@ const VerificationsPage: React.FC = () => {
                 variant={filter === 'all' ? 'default' : 'outline'} 
                 onClick={() => setFilter('all')}
                 className={filter === 'all' ? 'bg-klikjasa-purple hover:bg-klikjasa-deepPurple' : ''}
+                size="sm"
               >
                 All
               </Button>
             </div>
-            <div className="w-full sm:w-64">
+            <div className="w-full md:w-64 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <Input 
                 placeholder="Search by name, phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full pl-9"
               />
             </div>
           </div>
@@ -91,34 +152,53 @@ const VerificationsPage: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="text-left border-b">
-                  <th className="pb-2 font-medium">Provider Name</th>
-                  <th className="pb-2 font-medium">Phone Number</th>
-                  <th className="pb-2 font-medium">Submitted Date</th>
-                  <th className="pb-2 font-medium">Status</th>
-                  <th className="pb-2 font-medium">Actions</th>
+                  <th className="pb-3 pt-1 font-medium">Provider Name</th>
+                  <th className="pb-3 pt-1 font-medium">Phone Number</th>
+                  <th className="pb-3 pt-1 font-medium">Submitted Date</th>
+                  <th className="pb-3 pt-1 font-medium">Status</th>
+                  <th className="pb-3 pt-1 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredVerifications.length > 0 ? (
                   filteredVerifications.map((verification) => (
-                    <tr key={verification.id} className="border-b">
+                    <tr key={verification.id} className="border-b hover:bg-gray-50">
                       <td className="py-4">{verification.providerName}</td>
                       <td className="py-4">{verification.phoneNumber}</td>
                       <td className="py-4">{new Date(verification.submittedDate).toLocaleDateString()}</td>
                       <td className="py-4">{getStatusBadge(verification.status)}</td>
                       <td className="py-4">
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/admin/verifications/${verification.id}`)}>
+                        <div className="flex space-x-2 justify-end">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => navigate(`/admin/verifications/${verification.id}`)}
+                            className="h-8"
+                          >
                             <Eye size={16} className="mr-1" /> View
                           </Button>
                           
                           {verification.status === 'pending' && (
                             <>
-                              <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700 hover:bg-green-50">
-                                <Check size={16} className="mr-1" /> Approve
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8"
+                                onClick={() => handleQuickApprove(verification.id, verification.providerName)}
+                                disabled={loading[`approve-${verification.id}`]}
+                              >
+                                <Check size={16} className="mr-1" /> 
+                                {loading[`approve-${verification.id}`] ? 'Approving...' : 'Approve'}
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                <X size={16} className="mr-1" /> Reject
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                                onClick={() => handleQuickReject(verification.id, verification.providerName)}
+                                disabled={loading[`reject-${verification.id}`]}
+                              >
+                                <X size={16} className="mr-1" /> 
+                                {loading[`reject-${verification.id}`] ? 'Rejecting...' : 'Reject'}
                               </Button>
                             </>
                           )}
@@ -128,7 +208,9 @@ const VerificationsPage: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-4 text-center">No verification requests found</td>
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
+                      No verification requests found matching your criteria
+                    </td>
                   </tr>
                 )}
               </tbody>
