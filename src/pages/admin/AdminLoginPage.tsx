@@ -7,88 +7,78 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const AdminLoginPage: React.FC = () => {
-  const { login, role, isAuthenticated, user } = useAuth();
+  const { login, logout, role, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('admin@klikjasa.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Enhanced monitoring for role and authentication with debug logs
+  // Log out any current user when visiting the admin login page
   useEffect(() => {
-    console.log("AdminLoginPage - Current auth state:", { 
-      isAuthenticated, 
-      role, 
-      userEmail: user?.email 
-    });
-    
-    // Redirect if admin is logged in - with slight delay to ensure state is updated
-    if (isAuthenticated) {
-      if (user?.email === 'admin@klikjasa.com' || role === 'admin') {
-        console.log("AdminLoginPage - Admin detected, redirecting to admin panel");
-        
-        // Use a short delay to ensure role state has propagated
-        setTimeout(() => {
-          navigate('/admin');
-        }, 300);
+    const performLogout = async () => {
+      if (isAuthenticated && user?.email !== 'admin@klikjasa.com') {
+        console.log("Logging out non-admin user on admin login page");
+        await logout();
       }
+    };
+    
+    performLogout();
+  }, [isAuthenticated, user, logout]);
+  
+  // Redirect if already authenticated as admin
+  useEffect(() => {
+    console.log("AdminLoginPage - Auth state:", { isAuthenticated, role, email: user?.email });
+    
+    // Only redirect if properly authenticated as admin
+    if (isAuthenticated && user?.email === 'admin@klikjasa.com') {
+      console.log("Already authenticated as admin, redirecting to admin panel");
+      setTimeout(() => navigate('/admin'), 100);
     }
-  }, [isAuthenticated, role, navigate, user]);
+  }, [isAuthenticated, role, user, navigate]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
-    if (!email || !password) {
-      toast({
-        title: 'Error',
-        description: 'Please enter both email and password',
-        variant: 'destructive',
-      });
+    if (!password) {
+      setErrorMessage('Please enter your password');
       return;
     }
     
-    // Check if the entered credentials match the admin credentials from the design spec
     if (email !== 'admin@klikjasa.com') {
-      toast({
-        title: 'Error',
-        description: 'Invalid admin email address',
-        variant: 'destructive',
-      });
+      setErrorMessage('Only admin@klikjasa.com can access the admin panel');
       return;
     }
     
     setIsLoading(true);
     
     try {
-      console.log('Attempting admin login with email:', email);
-      const { user } = await login(email, password);
+      console.log('Attempting admin login...');
+      await login(email, password);
       
-      if (user) {
-        toast({
-          title: 'Login Successful',
-          description: 'Welcome to KlikJasa Admin Panel',
-        });
-        
-        console.log('Successful admin login, user:', user);
-        // Explicitly navigate to admin panel after short delay
-        setTimeout(() => {
-          navigate('/admin');
-        }, 500);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to log in. Please check your credentials.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Login error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to log in. Please check your credentials.',
+        title: 'Login Successful',
+        description: 'Welcome to KlikJasa Admin Panel',
+      });
+      
+      // Use longer timeout to ensure auth state is fully processed
+      setTimeout(() => {
+        navigate('/admin');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Admin login error:', error);
+      setErrorMessage('Invalid credentials. Please try again.');
+      
+      toast({
+        title: 'Login Failed',
+        description: 'Invalid credentials. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -111,6 +101,12 @@ const AdminLoginPage: React.FC = () => {
         
         <Card>
           <CardContent className="pt-6">
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleLogin}>
               <div className="space-y-4">
                 <div className="space-y-2">

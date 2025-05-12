@@ -23,7 +23,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const { logout, role, user } = useAuth();
   const { toast } = useToast();
 
-  // Log current state for debugging
   console.log("AdminLayout - Current state:", {
     role,
     userEmail: user?.email,
@@ -32,18 +31,31 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/');
-      toast({
-        title: 'Logout successful',
-        description: 'You have been logged out of the admin panel',
-      });
+      console.log("Admin logging out");
+      const success = await logout();
+      
+      if (success) {
+        navigate('/admin/login', { replace: true });
+        toast({
+          title: 'Logout successful',
+          description: 'You have been logged out of the admin panel',
+        });
+      } else {
+        toast({
+          title: 'Logout issue',
+          description: 'Session may already be expired. Redirecting to login.',
+          variant: 'destructive',
+        });
+        navigate('/admin/login', { replace: true });
+      }
     } catch (error) {
+      console.error("Admin logout error:", error);
       toast({
         title: 'Error',
-        description: 'Failed to log out. Please try again.',
+        description: 'Failed to log out properly. Redirecting to login.',
         variant: 'destructive',
       });
+      navigate('/admin/login', { replace: true });
     }
   };
 
@@ -61,6 +73,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       <div className="w-64 bg-white shadow-md">
         <div className="p-4 border-b">
           <h1 className="text-xl font-bold text-klikjasa-purple">KlikJasa Admin</h1>
+          {user?.email && (
+            <p className="text-sm text-gray-500 mt-1 truncate">
+              {user.email}
+            </p>
+          )}
         </div>
         <nav className="mt-6">
           <ul>

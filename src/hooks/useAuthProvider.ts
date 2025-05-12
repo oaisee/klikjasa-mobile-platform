@@ -1,9 +1,10 @@
 
 import { updateUserRole, fetchProfile } from './auth/useProfile';
-import { login, logout, register } from './auth/useAuthFunctions';
+import { login as authLogin, logout as authLogout, register } from './auth/useAuthFunctions';
 import { useAuthState } from './auth/useAuthState';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAuthProvider = () => {
   const { 
@@ -55,32 +56,29 @@ export const useAuthProvider = () => {
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting login with email:", email);
-      const data = await login(email, password);
+      const data = await authLogin(email, password);
       console.log("Login successful, user:", data.user?.id);
       
-      // Handle the admin@klikjasa.com special case
+      // Special handling for admin@klikjasa.com
       if (email === 'admin@klikjasa.com' && data.user) {
         console.log("Admin login detected, setting role to admin immediately");
+        
         // Set role in the local state immediately
         setRole('admin');
         
-        // Update role in database with a small delay to ensure proper session establishment
-        setTimeout(async () => {
-          try {
-            // Ensure the database reflects the admin role
-            await updateUserRole(data.user!.id, 'admin');
-            
-            // Update profile in memory
-            setProfile(prev => ({
-              ...prev,
-              role: 'admin'
-            }));
-            
-            console.log("Admin role successfully updated in database");
-          } catch (err) {
-            console.error("Error updating admin role:", err);
-          }
-        }, 500);
+        // Update role in database immediately to ensure consistent state
+        try {
+          await updateUserRole(data.user.id, 'admin');
+          console.log("Admin role updated in database");
+          
+          // Update profile in memory
+          setProfile(prev => ({
+            ...prev,
+            role: 'admin'
+          }));
+        } catch (err) {
+          console.error("Error updating admin role:", err);
+        }
       }
       
       return { 
@@ -90,6 +88,28 @@ export const useAuthProvider = () => {
     } catch (error) {
       console.error("Login error:", error);
       throw error;
+    }
+  };
+  
+  // Enhanced logout function
+  const handleLogout = async () => {
+    try {
+      console.log("Attempting logout");
+      const success = await authLogout();
+      
+      if (success) {
+        // Clear local state regardless of logout result
+        setRole('user');
+        setProfile(null);
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Logout error in provider:", error);
+      // Clear local state on error anyway
+      setRole('user');
+      setProfile(null);
+      return false;
     }
   };
 
@@ -102,7 +122,7 @@ export const useAuthProvider = () => {
     loading,
     login: handleLogin,
     register: handleRegister,
-    logout,
+    logout: handleLogout,
     switchRole
   };
 };

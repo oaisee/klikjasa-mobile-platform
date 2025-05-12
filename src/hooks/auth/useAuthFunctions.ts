@@ -5,15 +5,19 @@ import { fetchProfile } from './useProfile';
 // Login function
 export const login = async (email: string, password: string) => {
   try {
+    console.log(`Attempting login for: ${email}`);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
+      console.error('Login error:', error);
       throw new Error(error.message);
     }
 
+    console.log('Login successful for:', email);
+    
     return {
       user: data.user,
       session: data.session
@@ -56,21 +60,34 @@ export const register = async (email: string, password: string, name: string) =>
 // Logout function - Improved to handle missing sessions better
 export const logout = async () => {
   try {
+    console.log('Attempting to log out user');
+    
     // Check if we have a valid session before attempting to sign out
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Error getting session:', sessionError);
+      return false;
+    }
     
     if (!session) {
       console.log('No active session found, clearing local state only');
-      return true; // Return true to indicate successful logout of local state
+      return true; 
     }
     
+    console.log('Active session found, logging out from Supabase');
     const { error } = await supabase.auth.signOut();
+    
     if (error) {
+      console.error('Error during logout:', error);
       throw new Error(error.message);
     }
+    
+    console.log('Logout successful');
     return true;
   } catch (error) {
     console.error('Logout error:', error);
-    throw error;
+    // Don't throw here, just return false to prevent UI crashes
+    return false;
   }
 };
