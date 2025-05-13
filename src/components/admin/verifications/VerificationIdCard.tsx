@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileImage, ZoomIn, RefreshCw } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface VerificationIdCardProps {
   idCardUrl: string;
@@ -14,6 +15,15 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const { toast } = useToast();
+  
+  // Try to load the image when the component mounts or URL changes
+  useEffect(() => {
+    if (idCardUrl) {
+      setHasError(false);
+      setIsImageLoaded(false);
+    }
+  }, [idCardUrl]);
   
   // Function to handle retry logic
   const handleRetry = async () => {
@@ -22,25 +32,49 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
     setRetryCount(prev => prev + 1);
     
     try {
-      // Try to regenerate the URL by extracting the path
-      const storagePath = idCardUrl.includes('/public/verifications/') ? 
-        idCardUrl.split('/public/verifications/')[1] : 
-        idCardUrl.includes('id_cards/') ? idCardUrl : `id_cards/${idCardUrl}`;
+      // Extract the file path from the URL
+      let storagePath = '';
       
-      if (storagePath) {
-        console.log("Retrying with path:", storagePath);
-        const { data } = await supabase
-          .storage
-          .from('verifications')
-          .getPublicUrl(storagePath);
-          
-        if (data) {
-          console.log("Regenerated public URL:", data.publicUrl);
-        }
+      if (idCardUrl.includes('/public/verifications/')) {
+        storagePath = idCardUrl.split('/public/verifications/')[1];
+      } else if (idCardUrl.includes('id_cards/')) {
+        storagePath = idCardUrl;
+      } else {
+        storagePath = `id_cards/${idCardUrl}`;
+      }
+      
+      console.log("Attempting to regenerate URL with path:", storagePath);
+      
+      const { data, error } = await supabase
+        .storage
+        .from('verifications')
+        .getPublicUrl(storagePath);
+        
+      if (error) {
+        console.error("Error getting public URL:", error);
+        throw error;
+      }
+        
+      if (data) {
+        console.log("Successfully regenerated public URL:", data.publicUrl);
+        toast({
+          title: "Retrying image load",
+          description: "Attempting to load image with fresh URL"
+        });
       }
     } catch (err) {
       console.error("Error during retry:", err);
+      toast({
+        title: "Retry failed",
+        description: "Could not regenerate image URL. Please check storage permissions.",
+        variant: "destructive"
+      });
     }
+  };
+  
+  // Force refresh the page to apply new storage policies
+  const handleForceRefresh = () => {
+    window.location.reload();
   };
   
   // Use a modified URL to prevent caching issues
@@ -58,20 +92,28 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
           <FileImage size={48} className="text-gray-400" />
           <div className="text-gray-500 text-center space-y-2">
             <p>Unable to load the ID card image. The file may be corrupted or no longer exists.</p>
-            <p className="text-sm break-all">URL: {idCardUrl}</p>
+            <p className="text-sm break-all overflow-hidden text-ellipsis max-w-full">URL: {idCardUrl}</p>
             
-            {/* Display more detailed error information */}
-            <p className="text-xs text-red-500 mt-2">
-              Storage policies have been updated. Please try refreshing the page or clicking the retry button below.
+            <p className="text-xs text-klikjasa-purple mt-2">
+              Storage policies have been updated. Please try the actions below.
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleRetry}
-            className="flex items-center gap-2 mt-2"
-          >
-            <RefreshCw size={16} className="mr-1" /> Try Again
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRetry}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw size={16} className="mr-1" /> Try Again
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleForceRefresh}
+              className="flex items-center gap-2 klikjasa-gradient"
+            >
+              Refresh Page
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -87,6 +129,10 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
                   console.log("ID card image loaded successfully:", imageUrlWithCache);
                   setIsImageLoaded(true);
                   setHasError(false);
+                  toast({
+                    title: "Image loaded successfully",
+                    description: "ID card is now visible"
+                  });
                 }}
                 onError={(e) => {
                   console.error("Failed to load ID card image:", imageUrlWithCache);
