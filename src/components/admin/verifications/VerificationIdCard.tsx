@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface VerificationIdCardProps {
   idCardUrl: string;
@@ -15,6 +16,7 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [imageUrl, setImageUrl] = useState(idCardUrl);
   const { toast } = useToast();
   
   // Try to load the image when the component mounts or URL changes
@@ -22,6 +24,20 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
     if (idCardUrl) {
       setHasError(false);
       setIsImageLoaded(false);
+      setImageUrl(idCardUrl);
+      
+      // Pre-fetch the image to check if it loads
+      const img = new Image();
+      img.onload = () => {
+        setIsImageLoaded(true);
+        setHasError(false);
+      };
+      img.onerror = () => {
+        console.error("Failed to pre-load ID card image:", idCardUrl);
+        setHasError(true);
+        handleRetry(); // Automatically try once
+      };
+      img.src = idCardUrl;
     }
   }, [idCardUrl]);
   
@@ -45,18 +61,14 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
       
       console.log("Attempting to regenerate URL with path:", storagePath);
       
-      const { data, error } = await supabase
+      const { data } = await supabase
         .storage
         .from('verifications')
         .getPublicUrl(storagePath);
         
-      if (error) {
-        console.error("Error getting public URL:", error);
-        throw error;
-      }
-        
       if (data) {
         console.log("Successfully regenerated public URL:", data.publicUrl);
+        setImageUrl(data.publicUrl);
         toast({
           title: "Retrying image load",
           description: "Attempting to load image with fresh URL"
@@ -78,7 +90,7 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
   };
   
   // Use a modified URL to prevent caching issues
-  const imageUrlWithCache = hasError ? '' : `${idCardUrl}${idCardUrl.includes('?') ? '&' : '?'}cache=${retryCount}`;
+  const imageUrlWithCache = hasError ? '' : `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}cache=${retryCount}`;
   
   return (
     <>
@@ -120,6 +132,13 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
           {/* Preview card with aspect ratio */}
           <div className="border rounded-md overflow-hidden bg-gray-50 relative group">
             <AspectRatio ratio={16/9} className="bg-muted">
+              {!isImageLoaded && !hasError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <Skeleton className="h-32 w-40" />
+                  <p className="text-sm text-gray-500">Loading ID card...</p>
+                </div>
+              )}
+              
               <img 
                 key={retryCount} // Force re-render on retry
                 src={imageUrlWithCache} 
@@ -129,22 +148,14 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
                   console.log("ID card image loaded successfully:", imageUrlWithCache);
                   setIsImageLoaded(true);
                   setHasError(false);
-                  toast({
-                    title: "Image loaded successfully",
-                    description: "ID card is now visible"
-                  });
                 }}
-                onError={(e) => {
+                onError={() => {
                   console.error("Failed to load ID card image:", imageUrlWithCache);
                   setHasError(true);
                   setIsImageLoaded(false);
                 }}
+                loading="eager" // Prioritize image loading
               />
-              {!isImageLoaded && !hasError && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-8 w-8 border-4 border-klikjasa-purple border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
               
               {/* Full-screen preview button overlay */}
               {isImageLoaded && (
