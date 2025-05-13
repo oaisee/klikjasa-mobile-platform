@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, UserCog, Edit, Shield, User as UserIcon, CheckCircle } from 'lucide-react';
+import { Search, UserCog, Edit, Shield, User as UserIcon, CheckCircle, Loader2 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
-import { Loader2 } from 'lucide-react';
 
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
