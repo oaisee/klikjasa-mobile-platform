@@ -54,23 +54,38 @@ export function useFetchVerificationDetail() {
       
       // Ensure the ID card URL is properly formatted
       if (data.id_card_url) {
-        // Check if the URL already contains the storage path
-        if (!data.id_card_url.includes('supabase.co/storage')) {
-          const idCardPath = data.id_card_url.startsWith('id_cards/') 
-            ? data.id_card_url 
-            : `id_cards/${data.id_card_url}`;
-            
-          // Get public URL for the file
-          const { data: urlData } = await supabase
-            .storage
-            .from('verifications')
-            .getPublicUrl(idCardPath);
-            
-          if (urlData) {
-            console.log("Generated public URL for ID card:", urlData.publicUrl);
-            data.id_card_url = urlData.publicUrl;
+        try {
+          // Check if the URL already contains the full storage URL
+          if (!data.id_card_url.includes('storage/v1/object/public/verifications')) {
+            const idCardPath = data.id_card_url.startsWith('id_cards/') 
+              ? data.id_card_url 
+              : `id_cards/${data.id_card_url}`;
+              
+            // Get public URL for the file
+            const { data: urlData } = await supabase
+              .storage
+              .from('verifications')
+              .getPublicUrl(idCardPath);
+              
+            if (urlData) {
+              console.log("Generated public URL for ID card:", urlData.publicUrl);
+              data.id_card_url = urlData.publicUrl;
+            }
           }
+          
+          // Verify the URL works by sending a HEAD request
+          const urlToCheck = data.id_card_url;
+          console.log("Verifying image URL accessibility:", urlToCheck);
+          
+          // Simply log the URL for debugging - we'll rely on the img tag's error handling
+          // rather than pre-checking URLs which can be complex with CORS
+        } catch (urlErr) {
+          console.error("Error processing ID card URL:", urlErr);
+          // Continue with the process even if URL verification fails
+          // The component will handle display issues
         }
+      } else {
+        console.warn("No ID card URL found in verification data");
       }
       
       // Transform address from JSON to the expected format

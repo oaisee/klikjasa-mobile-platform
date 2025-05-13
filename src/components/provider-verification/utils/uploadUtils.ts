@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface UploadResult {
   success: boolean;
@@ -44,7 +43,7 @@ export const uploadIdCard = async (
     
     // Create a unique file name
     const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}-${Math.random().toString().substring(2)}.${fileExt}`;
+    const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `id_cards/${fileName}`;
     
     console.log('Uploading file to:', filePath);

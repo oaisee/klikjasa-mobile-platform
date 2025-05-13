@@ -26,14 +26,12 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
       const storagePath = idCardUrl.split('/public/verifications/')[1];
       if (storagePath) {
         console.log("Checking file existence:", storagePath);
-        const { data, error } = await supabase
+        const { data } = await supabase
           .storage
           .from('verifications')
           .getPublicUrl(storagePath);
           
-        if (error) {
-          console.error("Storage error:", error);
-        } else {
+        if (data) {
           console.log("Public URL data:", data);
         }
       }
