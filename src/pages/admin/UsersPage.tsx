@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, UserCog, Edit, Shield, User as UserIcon } from 'lucide-react';
+import { Search, UserCog, Edit, Shield, User as UserIcon, CheckCircle } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,10 +100,18 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const getVerificationBadge = (isVerified: boolean) => {
-    return isVerified 
-      ? <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">Verified</Badge>
-      : <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Verified</Badge>;
+  const getVerificationBadge = (isVerified: boolean, role: UserRole) => {
+    // Only show verified badge for provider role
+    if (role === 'provider') {
+      return isVerified 
+        ? <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" /> Verified
+          </Badge>
+        : <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Verified</Badge>;
+    }
+    
+    // For other roles (user, admin), don't show verification status
+    return <span className="text-gray-400 text-xs">N/A</span>;
   };
 
   const getRoleIcon = (role: UserRole) => {
@@ -195,7 +203,7 @@ const UsersPage: React.FC = () => {
                           </TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>{getVerificationBadge(user.isVerified)}</TableCell>
+                          <TableCell>{getVerificationBadge(user.isVerified, user.role)}</TableCell>
                           <TableCell>Rp {user.balance.toLocaleString()}</TableCell>
                           <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                           <TableCell className="text-right">
