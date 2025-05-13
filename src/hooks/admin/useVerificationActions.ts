@@ -13,10 +13,6 @@ export function useVerificationActions() {
     try {
       setLoading(status); // Set loading state to the action being performed
       
-      // Begin transaction
-      const { error: transactionError } = await supabase.rpc('begin_transaction');
-      if (transactionError) throw new Error(`Transaction error: ${transactionError.message}`);
-      
       // 1. First update the verification record
       const updates: { status: VerificationStatus; admin_notes?: string } = { status };
       
@@ -96,10 +92,6 @@ export function useVerificationActions() {
         if (notificationError) throw new Error(`Notification error: ${notificationError.message}`);
       }
       
-      // Commit transaction
-      const { error: commitError } = await supabase.rpc('commit_transaction');
-      if (commitError) throw new Error(`Commit error: ${commitError.message}`);
-      
       toast({
         title: `Verification ${status === 'approved' ? 'Approved' : 'Rejected'}`,
         description: `${verificationData.full_name}'s verification has been ${status}.`,
@@ -108,9 +100,6 @@ export function useVerificationActions() {
       
       return true;
     } catch (err) {
-      // Rollback transaction on error
-      await supabase.rpc('rollback_transaction').catch(console.error);
-      
       console.error("Error updating verification status:", err);
       toast({
         title: "Error",

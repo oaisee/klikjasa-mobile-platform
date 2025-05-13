@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import React from 'react';
+import { ZoomIn } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { ImagePreviewDialog } from './ImageZoom/ImagePreviewDialog';
 
 interface IdCardPreviewProps {
   imageUrl: string;
@@ -21,58 +21,6 @@ export const IdCardPreview: React.FC<IdCardPreviewProps> = ({
   onImageLoad,
   onImageError
 }) => {
-  // State for zoom functionality
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [isPanning, setIsPanning] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 });
-  
-  // Zoom functions
-  const zoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.25, 3));
-    // Reset position when zooming in to prevent image from going off-screen
-    if (zoomLevel === 1) {
-      setPosition({ x: 0, y: 0 });
-    }
-  };
-  
-  const zoomOut = () => {
-    setZoomLevel(prev => {
-      const newZoom = Math.max(prev - 0.25, 1);
-      // Reset position when fully zoomed out
-      if (newZoom === 1) {
-        setPosition({ x: 0, y: 0 });
-      }
-      return newZoom;
-    });
-  };
-  
-  const resetZoom = () => {
-    setZoomLevel(1);
-    setPosition({ x: 0, y: 0 });
-  };
-  
-  // Pan functionality for zoomed image
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (zoomLevel > 1) {
-      setIsPanning(true);
-      setInitialPosition({ x: e.clientX - position.x, y: e.clientY - position.y });
-    }
-  };
-  
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPanning && zoomLevel > 1) {
-      setPosition({
-        x: e.clientX - initialPosition.x,
-        y: e.clientY - initialPosition.y
-      });
-    }
-  };
-  
-  const handleMouseUp = () => {
-    setIsPanning(false);
-  };
-  
   return (
     <div className="space-y-3">
       {/* Preview card with aspect ratio */}
@@ -106,66 +54,7 @@ export const IdCardPreview: React.FC<IdCardPreviewProps> = ({
                   </div>
                 </button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl p-4 bg-black/95">
-                <div className="relative w-full h-[80vh] overflow-hidden">
-                  <div 
-                    className="relative w-full h-full flex items-center justify-center"
-                    style={{ 
-                      cursor: zoomLevel > 1 ? 'grab' : 'default',
-                      touchAction: 'none'
-                    }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                  >
-                    <img 
-                      src={imageUrl} 
-                      alt="Identity Card Full Preview" 
-                      className="max-h-[70vh] object-contain transition-transform duration-200"
-                      style={{ 
-                        transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Zoom controls */}
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={zoomOut} 
-                      disabled={zoomLevel <= 1}
-                      className="bg-white/80 hover:bg-white"
-                    >
-                      <ZoomOut size={18} />
-                    </Button>
-                    
-                    <div className="bg-white/80 px-3 py-1 rounded text-xs font-medium">
-                      {Math.round(zoomLevel * 100)}%
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={zoomIn} 
-                      disabled={zoomLevel >= 3}
-                      className="bg-white/80 hover:bg-white"
-                    >
-                      <ZoomIn size={18} />
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      onClick={resetZoom} 
-                      disabled={zoomLevel === 1}
-                      className="bg-white/80 hover:bg-white text-xs ml-2"
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
+              <ImagePreviewDialog imageUrl={imageUrl} />
             </Dialog>
           )}
         </AspectRatio>
@@ -183,66 +72,7 @@ export const IdCardPreview: React.FC<IdCardPreviewProps> = ({
                 <span>Full Preview</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl p-4 bg-black/95">
-              <div className="relative w-full h-[80vh] overflow-hidden">
-                <div 
-                  className="relative w-full h-full flex items-center justify-center"
-                  style={{ 
-                    cursor: zoomLevel > 1 ? 'grab' : 'default',
-                    touchAction: 'none'
-                  }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                >
-                  <img 
-                    src={imageUrl} 
-                    alt="Identity Card Full Preview" 
-                    className="max-h-[70vh] object-contain transition-transform duration-200"
-                    style={{ 
-                      transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
-                    }}
-                  />
-                </div>
-                
-                {/* Zoom controls */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={zoomOut} 
-                    disabled={zoomLevel <= 1}
-                    className="bg-white/80 hover:bg-white"
-                  >
-                    <ZoomOut size={18} />
-                  </Button>
-                  
-                  <div className="bg-white/80 px-3 py-1 rounded text-xs font-medium">
-                    {Math.round(zoomLevel * 100)}%
-                  </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={zoomIn} 
-                    disabled={zoomLevel >= 3}
-                    className="bg-white/80 hover:bg-white"
-                  >
-                    <ZoomIn size={18} />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={resetZoom} 
-                    disabled={zoomLevel === 1}
-                    className="bg-white/80 hover:bg-white text-xs ml-2"
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
+            <ImagePreviewDialog imageUrl={imageUrl} />
           </Dialog>
         </div>
       )}
