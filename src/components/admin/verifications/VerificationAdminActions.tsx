@@ -1,11 +1,21 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, X } from 'lucide-react';
+import { Check, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationStatus } from '@/hooks/admin/types/verification';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface VerificationAdminActionsProps {
   id: string;
@@ -26,6 +36,10 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<string>(initialNotes || '');
+  
+  // State for confirmation dialogs
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   const handleApprove = async () => {
     setLoading('approving');
@@ -35,7 +49,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
       
       if (success) {
         toast({
-          title: 'Verification Approved',
+          title: 'Success',
           description: `${fullName}'s account has been approved successfully.`,
         });
         
@@ -43,6 +57,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
       }
     } finally {
       setLoading(null);
+      setShowApproveDialog(false);
     }
   };
 
@@ -50,6 +65,17 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
     setLoading('rejecting');
     
     try {
+      if (!adminNotes.trim()) {
+        toast({
+          title: 'Notes Required',
+          description: 'Please provide notes explaining why the verification is being rejected.',
+          variant: 'destructive',
+        });
+        setLoading(null);
+        setShowRejectDialog(false);
+        return;
+      }
+      
       const success = await onUpdateStatus(id, 'rejected', adminNotes);
       
       if (success) {
@@ -62,6 +88,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
       }
     } finally {
       setLoading(null);
+      setShowRejectDialog(false);
     }
   };
 
@@ -69,7 +96,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
     <>
       <h3 className="font-medium mb-4">Admin Notes</h3>
       <Textarea 
-        placeholder="Add notes about this verification (optional)"
+        placeholder="Add notes about this verification (required for rejection)"
         className="resize-none mb-4"
         value={adminNotes}
         onChange={(e) => setAdminNotes(e.target.value)}
@@ -80,7 +107,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
         <div className="space-y-3">
           <Button 
             className="w-full bg-green-600 hover:bg-green-700"
-            onClick={handleApprove}
+            onClick={() => setShowApproveDialog(true)}
             disabled={loading !== null}
           >
             <Check size={18} className="mr-2" /> 
@@ -90,7 +117,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
           <Button 
             variant="outline" 
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleReject}
+            onClick={() => setShowRejectDialog(true)}
             disabled={loading !== null}
           >
             <X size={18} className="mr-2" /> 
@@ -107,6 +134,65 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
           </p>
         </div>
       )}
+      
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Provider Verification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve {fullName}'s verification request?
+              This will grant them provider privileges on the platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading === 'approving'}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleApprove();
+              }}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={loading === 'approving'}
+            >
+              {loading === 'approving' ? 'Processing...' : 'Yes, Approve'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Reject Provider Verification
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject {fullName}'s verification request?
+              {!adminNotes.trim() && (
+                <p className="mt-2 text-red-500 font-medium">
+                  Please provide notes explaining the reason for rejection.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading === 'rejecting'}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleReject();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={loading === 'rejecting' || !adminNotes.trim()}
+            >
+              {loading === 'rejecting' ? 'Processing...' : 'Yes, Reject'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
