@@ -29,6 +29,7 @@ export function VerificationForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<VerificationFormData>({
     fullName: profile?.name || '',
@@ -44,11 +45,15 @@ export function VerificationForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
+    // Clear error when user makes changes after an error
+    if (uploadError) setUploadError(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFormData(prev => ({ ...prev, idCard: e.target.files![0] }));
+      // Clear error when user selects a new file after an error
+      if (uploadError) setUploadError(null);
     }
   };
 
@@ -56,6 +61,7 @@ export function VerificationForm() {
     e.preventDefault();
     setIsLoading(true);
     setUploadProgress(0);
+    setUploadError(null);
     
     try {
       if (!formData.idCard) {
@@ -89,7 +95,8 @@ export function VerificationForm() {
       });
       
       if (!uploadResult.success) {
-        throw new Error(uploadResult.error || "Failed to upload ID card. Please make sure the image is valid and try again.");
+        setUploadError(uploadResult.error || "Failed to upload ID card");
+        throw new Error(uploadResult.error || "Failed to upload ID card. Please try again.");
       }
       
       // 2. Submit verification request with the uploaded ID card URL
@@ -127,7 +134,6 @@ export function VerificationForm() {
       });
     } finally {
       setIsLoading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -162,7 +168,15 @@ export function VerificationForm() {
       <IdCardUploader 
         onFileChange={handleFileChange}
         selectedFile={formData.idCard}
+        error={uploadError}
       />
+      
+      {uploadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+          <p><strong>Upload Error:</strong> {uploadError}</p>
+          <p className="mt-1">Please try again or contact support if the problem persists.</p>
+        </div>
+      )}
       
       <div className="pt-4">
         <Button 

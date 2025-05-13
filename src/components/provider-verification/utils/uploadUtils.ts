@@ -18,26 +18,20 @@ export const uploadIdCard = async (
       onProgress(10);
     }
     
-    // Check if the bucket exists first
-    const { data: buckets, error: bucketsError } = await supabase
-      .storage
-      .listBuckets();
-      
-    if (bucketsError) {
-      console.error('Error checking buckets:', bucketsError);
+    // Check file size and type
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
       return {
         success: false,
-        error: bucketsError.message
+        error: 'File too large. Maximum size is 5MB.'
       };
     }
-    
-    const bucketExists = buckets?.some(bucket => bucket.name === 'verifications');
-    
-    if (!bucketExists) {
-      console.error('Verifications bucket does not exist');
+
+    // Verify file is an image
+    if (!file.type.startsWith('image/')) {
       return {
         success: false,
-        error: 'Storage bucket not configured. Please contact an administrator.'
+        error: 'Only image files are allowed.'
       };
     }
     
@@ -46,7 +40,7 @@ export const uploadIdCard = async (
     const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `id_cards/${fileName}`;
     
-    console.log('Uploading file to:', filePath);
+    console.log('Attempting to upload file to path:', filePath);
     
     // Upload file to the 'verifications' bucket
     const { error: uploadError, data } = await supabase.storage
