@@ -4,6 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VerificationStatus } from './types/verification';
 
+// Define the interface for the create_user_notification RPC function parameters
+interface CreateNotificationParams {
+  p_user_id: string;
+  p_type: string;
+  p_title: string;
+  p_content: string;
+  p_data?: Record<string, any>;
+}
+
 export function useVerificationActions() {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
@@ -55,13 +64,18 @@ export function useVerificationActions() {
         if (profileUpdateError) throw new Error(`Profile update error: ${profileUpdateError.message}`);
         
         // 4. Create notification for the user - Using the rpc method to bypass RLS
-        const { error: notificationError } = await supabase.rpc('create_user_notification', {
+        const notificationParams: CreateNotificationParams = {
           p_user_id: verificationData.user_id,
           p_type: 'verification_approved',
           p_title: 'Verification Approved',
           p_content: 'Your provider verification has been approved. You can now offer services on KlikJasa.',
           p_data: { verification_id: id }
-        });
+        };
+
+        const { error: notificationError } = await supabase.rpc(
+          'create_user_notification', 
+          notificationParams
+        );
         
         if (notificationError) throw new Error(`Notification error: ${notificationError.message}`);
       } else if (status === 'rejected') {
@@ -77,13 +91,18 @@ export function useVerificationActions() {
         if (profileUpdateError) throw new Error(`Profile update error: ${profileUpdateError.message}`);
         
         // Create rejection notification for the user - Using the rpc method to bypass RLS
-        const { error: notificationError } = await supabase.rpc('create_user_notification', {
+        const notificationParams: CreateNotificationParams = {
           p_user_id: verificationData.user_id,
           p_type: 'verification_rejected',
           p_title: 'Verification Rejected',
           p_content: 'Your provider verification request has been rejected. Please check the admin notes for details.',
           p_data: { verification_id: id, admin_notes: adminNotes }
-        });
+        };
+
+        const { error: notificationError } = await supabase.rpc(
+          'create_user_notification', 
+          notificationParams
+        );
         
         if (notificationError) throw new Error(`Notification error: ${notificationError.message}`);
       }
