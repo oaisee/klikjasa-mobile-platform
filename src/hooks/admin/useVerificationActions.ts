@@ -72,7 +72,7 @@ export function useVerificationActions() {
           p_data: { verification_id: id }
         };
 
-        const { error: notificationError } = await supabase.rpc(
+        const { error: notificationError } = await supabase.rpc<void>(
           'create_user_notification', 
           notificationParams
         );
@@ -99,7 +99,7 @@ export function useVerificationActions() {
           p_data: { verification_id: id, admin_notes: adminNotes }
         };
 
-        const { error: notificationError } = await supabase.rpc(
+        const { error: notificationError } = await supabase.rpc<void>(
           'create_user_notification', 
           notificationParams
         );
