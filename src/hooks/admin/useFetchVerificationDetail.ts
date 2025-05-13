@@ -73,16 +73,11 @@ export function useFetchVerificationDetail() {
             }
           }
           
-          // Verify the URL works by sending a HEAD request
-          const urlToCheck = data.id_card_url;
-          console.log("Verifying image URL accessibility:", urlToCheck);
-          
-          // Simply log the URL for debugging - we'll rely on the img tag's error handling
-          // rather than pre-checking URLs which can be complex with CORS
+          // Log the final URL for debugging
+          console.log("Final ID card URL:", data.id_card_url);
         } catch (urlErr) {
           console.error("Error processing ID card URL:", urlErr);
           // Continue with the process even if URL verification fails
-          // The component will handle display issues
         }
       } else {
         console.warn("No ID card URL found in verification data");

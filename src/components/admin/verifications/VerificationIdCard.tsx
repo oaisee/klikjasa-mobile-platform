@@ -22,21 +22,24 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
     setRetryCount(prev => prev + 1);
     
     try {
-      // Check if the file exists in storage
-      const storagePath = idCardUrl.split('/public/verifications/')[1];
+      // Try to regenerate the URL by extracting the path
+      const storagePath = idCardUrl.includes('/public/verifications/') ? 
+        idCardUrl.split('/public/verifications/')[1] : 
+        idCardUrl.includes('id_cards/') ? idCardUrl : `id_cards/${idCardUrl}`;
+      
       if (storagePath) {
-        console.log("Checking file existence:", storagePath);
+        console.log("Retrying with path:", storagePath);
         const { data } = await supabase
           .storage
           .from('verifications')
           .getPublicUrl(storagePath);
           
         if (data) {
-          console.log("Public URL data:", data);
+          console.log("Regenerated public URL:", data.publicUrl);
         }
       }
     } catch (err) {
-      console.error("Error checking file:", err);
+      console.error("Error during retry:", err);
     }
   };
   
@@ -55,11 +58,11 @@ const VerificationIdCard: React.FC<VerificationIdCardProps> = ({ idCardUrl }) =>
           <FileImage size={48} className="text-gray-400" />
           <div className="text-gray-500 text-center space-y-2">
             <p>Unable to load the ID card image. The file may be corrupted or no longer exists.</p>
-            <p className="text-sm">URL: {idCardUrl}</p>
+            <p className="text-sm break-all">URL: {idCardUrl}</p>
             
             {/* Display more detailed error information */}
             <p className="text-xs text-red-500 mt-2">
-              Try to check if the file exists in the Supabase storage bucket 'verifications'.
+              Storage policies have been updated. Please try refreshing the page or clicking the retry button below.
             </p>
           </div>
           <Button 
