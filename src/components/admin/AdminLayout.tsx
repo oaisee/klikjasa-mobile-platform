@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -32,21 +33,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       
       if (success) {
         navigate('/auth', { replace: true });
-        toast("Logout successful", {
-          description: 'You have been logged out of the admin panel',
+        toast('Logout successful', {
+          description: 'You have been logged out of the admin panel'
         });
       } else {
-        toast("Logout issue", {
-          description: 'Session may already be expired. Redirecting to login.',
-          variant: 'destructive',
+        toast('Logout issue', {
+          description: 'Session may already be expired. Redirecting to login.'
         });
         navigate('/auth', { replace: true });
       }
     } catch (error) {
       console.error("Admin logout error:", error);
-      toast("Error", {
-        description: 'Failed to log out properly. Redirecting to login.',
-        variant: 'destructive',
+      toast('Error', {
+        description: 'Failed to log out properly. Redirecting to login.'
       });
       navigate('/auth', { replace: true });
     }

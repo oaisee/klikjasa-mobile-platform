@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
@@ -13,7 +12,6 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,8 +40,7 @@ const LoginForm = () => {
         hasSession: !!result.session
       });
       
-      toast({
-        title: 'Success',
+      toast('Success', {
         description: 'You have successfully logged in!'
       });
       
@@ -63,10 +60,8 @@ const LoginForm = () => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.';
       console.error('Login error in form:', errorMessage);
       setAuthError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
+      toast('Error', {
+        description: errorMessage
       });
     } finally {
       setIsLoading(false);

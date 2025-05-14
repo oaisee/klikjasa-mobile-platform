@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { 
   VerificationStatus,
   useProviderVerifications
@@ -13,7 +13,6 @@ const VerificationsPage: React.FC = () => {
   const [filter, setFilter] = useState<VerificationStatus | 'all'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 10;
-  const { toast } = useToast();
 
   const { 
     verifications, 
@@ -49,9 +48,8 @@ const VerificationsPage: React.FC = () => {
     const success = await updateVerificationStatus(id, 'approved');
     
     if (success) {
-      toast({
-        title: 'Verification Approved',
-        description: `${name}'s verification request has been approved successfully.`,
+      toast('Verification Approved', {
+        description: `${name}'s verification request has been approved successfully.`
       });
       refetch();
     }
@@ -61,9 +59,8 @@ const VerificationsPage: React.FC = () => {
     const success = await updateVerificationStatus(id, 'rejected');
     
     if (success) {
-      toast({
-        title: 'Verification Rejected',
-        description: `${name}'s verification request has been rejected.`,
+      toast('Verification Rejected', {
+        description: `${name}'s verification request has been rejected.`
       });
       refetch();
     }

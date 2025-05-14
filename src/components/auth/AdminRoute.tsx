@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -13,7 +13,6 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { user, isAuthenticated, role, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   // Check if user has admin access - either by role or specific email
@@ -40,10 +39,8 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
       if (isAuthenticated && !isAdmin) {
         console.log("Access denied: Not admin", { email: user?.email, role });
         
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access the admin panel",
-          variant: "destructive",
+        toast('Access Denied', {
+          description: "You don't have permission to access the admin panel"
         });
         
         navigate('/', { replace: true });
@@ -59,7 +56,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     };
     
     checkAccess();
-  }, [loading, isAuthenticated, isAdmin, toast, navigate, user, role, location]);
+  }, [loading, isAuthenticated, isAdmin, navigate, user, role, location]);
 
   // Show loading state while checking authentication or when auth is still loading
   if (loading || isCheckingAccess) {

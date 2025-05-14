@@ -1,8 +1,12 @@
 
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
-// This is the correct implementation for toast using Sonner
-export { toast };
+// Compatibility layer for using sonner toast in our app
+export const toast = (message: string, options?: { description?: string }) => {
+  return sonnerToast(message, {
+    description: options?.description
+  });
+};
 
 // For backward compatibility with useToast pattern
 export const useToast = () => {
