@@ -1,6 +1,7 @@
 
-import { Toast, toast as sonnerToast } from "sonner";
-import { useToast as useShadcnToast } from "@/components/ui/toast";
+import { toast as sonnerToast } from "sonner";
+import { type ToastProps } from "@/components/ui/toast";
+import { useToast as useShadcnToast } from "@/components/ui/use-toast";
 
 type ToastTypes = {
   title?: string;
@@ -20,18 +21,14 @@ export const toast = (props: ToastTypes) => {
     }
   );
   
-  // Also trigger shadcn toast for backward compatibility
-  const { toast: shadcnToast } = useShadcnToast();
-  shadcnToast(props);
-  
   return props;
 };
 
 export const useToast = () => {
-  const shadcnToast = useShadcnToast();
-  
+  // Import from the correct location and return the toast function
   return {
-    ...shadcnToast,
-    toast
+    toast,
+    // Add any other properties you need
+    toasts: [] // Empty array for compatibility with shadcn toast
   };
 };
