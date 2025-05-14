@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { uploadIdCard } from '@/components/provider-verification/utils/uploadUtils';
 import { submitVerificationRequest } from '@/components/provider-verification/utils/verificationApi';
 import { AddressSection } from '@/components/provider-verification/AddressSection';
@@ -26,7 +25,6 @@ interface VerificationFormData {
 export function VerificationForm() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -65,8 +63,7 @@ export function VerificationForm() {
     
     try {
       if (!formData.idCard) {
-        toast({
-          title: "Error",
+        toast("Error", {
           description: "Please upload your ID card",
           variant: "destructive"
         });
@@ -75,8 +72,7 @@ export function VerificationForm() {
       }
 
       if (!user) {
-        toast({
-          title: "Authentication Error",
+        toast("Authentication Error", {
           description: "You need to be logged in to submit a verification request",
           variant: "destructive"
         });
@@ -85,8 +81,7 @@ export function VerificationForm() {
       }
 
       // 1. Upload ID card first
-      toast({
-        title: "Uploading",
+      toast("Uploading", {
         description: "Uploading your ID card..."
       });
       
@@ -118,8 +113,7 @@ export function VerificationForm() {
         throw new Error(submitResult.error || "Failed to submit verification request");
       }
 
-      toast({
-        title: "Success",
+      toast("Success", {
         description: "Your verification request has been submitted successfully. Please wait for admin approval."
       });
       
@@ -127,8 +121,7 @@ export function VerificationForm() {
       
     } catch (error) {
       console.error("Verification error:", error);
-      toast({
-        title: "Error",
+      toast("Error", {
         description: error instanceof Error ? error.message : "Something went wrong during the verification process. Please try again.",
         variant: "destructive"
       });

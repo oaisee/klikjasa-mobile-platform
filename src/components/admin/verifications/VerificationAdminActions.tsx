@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { VerificationStatus } from '@/hooks/admin/types/verification';
 import { 
   AlertDialog,
@@ -33,7 +32,6 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
   onUpdateStatus
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<string>(initialNotes || '');
   
@@ -48,8 +46,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
       const success = await onUpdateStatus(id, 'approved', adminNotes);
       
       if (success) {
-        toast({
-          title: 'Success',
+        toast("Success", {
           description: `${fullName}'s account has been approved successfully.`,
         });
         
@@ -66,8 +63,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
     
     try {
       if (!adminNotes.trim()) {
-        toast({
-          title: 'Notes Required',
+        toast("Notes Required", {
           description: 'Please provide notes explaining why the verification is being rejected.',
           variant: 'destructive',
         });
@@ -79,8 +75,7 @@ const VerificationAdminActions: React.FC<VerificationAdminActionsProps> = ({
       const success = await onUpdateStatus(id, 'rejected', adminNotes);
       
       if (success) {
-        toast({
-          title: 'Verification Rejected',
+        toast("Verification Rejected", {
           description: `${fullName}'s verification request has been rejected.`,
         });
         

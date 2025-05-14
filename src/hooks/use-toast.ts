@@ -1,11 +1,12 @@
 
-// Ini adalah implementasi yang benar untuk hooks toast
-import { toast as sonnerToast } from "sonner";
+import { toast } from "sonner";
 
-export const toast = sonnerToast;
+// This is the correct implementation for toast using Sonner
+export { toast };
 
+// For backward compatibility with useToast pattern
 export const useToast = () => {
   return {
-    toast: sonnerToast,
+    toast
   };
 };

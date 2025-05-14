@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -12,7 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
 interface AdminLayoutProps {
@@ -24,7 +23,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, role, user } = useAuth();
-  const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
@@ -34,13 +32,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       
       if (success) {
         navigate('/auth', { replace: true });
-        toast({
-          title: 'Logout successful',
+        toast("Logout successful", {
           description: 'You have been logged out of the admin panel',
         });
       } else {
-        toast({
-          title: 'Logout issue',
+        toast("Logout issue", {
           description: 'Session may already be expired. Redirecting to login.',
           variant: 'destructive',
         });
@@ -48,8 +44,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       }
     } catch (error) {
       console.error("Admin logout error:", error);
-      toast({
-        title: 'Error',
+      toast("Error", {
         description: 'Failed to log out properly. Redirecting to login.',
         variant: 'destructive',
       });
