@@ -22,14 +22,18 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   useEffect(() => {
     const checkAccess = async () => {
       // Wait for auth to finish loading
-      if (loading) return;
+      if (loading) {
+        console.log("AdminRoute: Auth still loading, waiting...");
+        return;
+      }
       
       console.log("AdminRoute check:", { 
         isAuthenticated, 
         isAdmin, 
         email: user?.email, 
         role, 
-        loading 
+        loading,
+        pathname: location.pathname
       });
       
       // If authenticated but not admin, show access denied and redirect
@@ -59,6 +63,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 
   // Show loading state while checking authentication or when auth is still loading
   if (loading || isCheckingAccess) {
+    console.log("AdminRoute: Showing loading state", { loading, isCheckingAccess });
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <Loader2 className="h-12 w-12 text-klikjasa-purple animate-spin" />
@@ -74,6 +79,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   }
   
   // For all other cases, render nothing while the useEffect redirects
+  console.log("AdminRoute: No render condition met, returning null");
   return null;
 };
 

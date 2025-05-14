@@ -32,8 +32,15 @@ const LoginForm = () => {
     setAuthError(null);
 
     try {
-      console.log(`Submitting login form for: ${loginForm.email}`);
+      console.log(`LoginForm: Submitting login form for: ${loginForm.email}`);
+      console.log("LoginForm: Before login call");
+      
       const result = await login(loginForm.email, loginForm.password);
+      
+      console.log("LoginForm: Login successful", {
+        user: result.user?.email,
+        hasSession: !!result.session
+      });
       
       toast({
         title: 'Success',
@@ -45,11 +52,12 @@ const LoginForm = () => {
         console.log('Admin login successful, redirecting to admin panel');
         // Add delay to ensure state is updated
         setTimeout(() => {
-          navigate(from || '/admin');
+          navigate(from || '/admin', { replace: true });
+          console.log("Navigation triggered to:", from || '/admin');
         }, 1000);
       } else {
         console.log('Regular user login successful, redirecting to home page');
-        navigate(from || '/');
+        navigate(from || '/', { replace: true });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to login. Please check your credentials and try again.';

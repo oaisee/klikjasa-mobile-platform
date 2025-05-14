@@ -23,65 +23,77 @@ import VerificationsPage from "./pages/admin/VerificationsPage";
 import VerificationDetailPage from "./pages/admin/VerificationDetailPage";
 import UsersPage from "./pages/admin/UsersPage";
 
-const queryClient = new QueryClient();
+// Application-wide configuration
+console.log("App: Initializing application");
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Admin Routes - No layout wrapper */}
-            <Route 
-              path="/admin" 
-              element={
-                <AdminRoute>
-                  <AdminDashboardPage />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/verifications" 
-              element={
-                <AdminRoute>
-                  <VerificationsPage />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/verifications/:id" 
-              element={
-                <AdminRoute>
-                  <VerificationDetailPage />
-                </AdminRoute>
-              } 
-            />
-            <Route 
-              path="/admin/users" 
-              element={
-                <AdminRoute>
-                  <UsersPage />
-                </AdminRoute>
-              } 
-            />
-            
-            {/* Main App Routes */}
-            <Route path="/" element={<Layout><HomePage /></Layout>} />
-            <Route path="/search" element={<Layout><SearchPage /></Layout>} />
-            <Route path="/service/:id" element={<Layout><ServiceDetailPage /></Layout>} />
-            <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-            <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
-            <Route path="/topup" element={<Layout><TopUpPage /></Layout>} />
-            <Route path="/provider-verification" element={<Layout><ProviderVerificationPage /></Layout>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<Layout><NotFound /></Layout>} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log("App: Rendering main App component");
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Admin Routes - No layout wrapper */}
+              <Route 
+                path="/admin" 
+                element={
+                  <AdminRoute>
+                    <AdminDashboardPage />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/verifications" 
+                element={
+                  <AdminRoute>
+                    <VerificationsPage />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/verifications/:id" 
+                element={
+                  <AdminRoute>
+                    <VerificationDetailPage />
+                  </AdminRoute>
+                } 
+              />
+              <Route 
+                path="/admin/users" 
+                element={
+                  <AdminRoute>
+                    <UsersPage />
+                  </AdminRoute>
+                } 
+              />
+              
+              {/* Main App Routes */}
+              <Route path="/" element={<Layout><HomePage /></Layout>} />
+              <Route path="/search" element={<Layout><SearchPage /></Layout>} />
+              <Route path="/service/:id" element={<Layout><ServiceDetailPage /></Layout>} />
+              <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+              <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
+              <Route path="/topup" element={<Layout><TopUpPage /></Layout>} />
+              <Route path="/provider-verification" element={<Layout><ProviderVerificationPage /></Layout>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<Layout><NotFound /></Layout>} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

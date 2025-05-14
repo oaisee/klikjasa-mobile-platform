@@ -14,17 +14,25 @@ const AuthPage = () => {
   
   // Check if user is already authenticated and redirect accordingly
   useEffect(() => {
+    console.log("AuthPage: Checking auth status", { 
+      loading, 
+      isAuthenticated, 
+      role,
+      email: user?.email,
+      from
+    });
+    
     if (!loading && isAuthenticated) {
       console.log("User already authenticated:", { role, email: user?.email });
       
       // If admin, redirect to admin panel
       if (role === 'admin' || user?.email === 'admin@klikjasa.com') {
         console.log("Redirecting authenticated admin to admin panel");
-        navigate(from || '/admin');
+        navigate(from || '/admin', { replace: true });
       } else {
         // Otherwise redirect to home
         console.log("Redirecting regular user to home page");
-        navigate(from || '/');
+        navigate(from || '/', { replace: true });
       }
     }
   }, [isAuthenticated, role, user, loading, navigate, from]);

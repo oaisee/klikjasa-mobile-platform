@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useAuthProvider } from '@/hooks/useAuthProvider';
 import { AuthContextType } from '@/types/auth';
 
@@ -29,6 +29,16 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
+
+  // Tambahkan log untuk melacak perubahan state autentikasi
+  useEffect(() => {
+    console.log("AuthProvider state:", {
+      isAuthenticated: auth.isAuthenticated,
+      role: auth.role,
+      email: auth.user?.email,
+      loading: auth.loading
+    });
+  }, [auth.isAuthenticated, auth.role, auth.user, auth.loading]);
 
   return (
     <AuthContext.Provider value={auth}>
