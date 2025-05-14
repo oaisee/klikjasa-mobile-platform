@@ -455,12 +455,51 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          data: Json | null
+          id: string
+          title: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          title?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          title?: string | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_user_notification: {
+        Args: {
+          p_content: string
+          p_data: Json
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
